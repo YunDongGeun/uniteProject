@@ -1,12 +1,6 @@
-package dormitoryMS.global.jdbc;
+package uniteProject.global.jdbc;
 
-import dormitoryMS.domain.user.student.Student;
-import dormitoryMS.domain.user.student.service.StudentService;
-
-import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.List;
+import uniteProject.domain.user.student.service.StudentService;
 
 public class Server {
     private static final int PORT = 8080;

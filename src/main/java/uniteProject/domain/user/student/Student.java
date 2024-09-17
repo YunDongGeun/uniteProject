@@ -1,4 +1,4 @@
-package dormitoryMS.domain.user.student;
+package uniteProject.domain.user.student;
 
 public abstract class Student{
     protected String name;

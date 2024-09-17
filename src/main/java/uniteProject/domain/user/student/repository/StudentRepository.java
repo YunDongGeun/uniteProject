@@ -1,9 +1,9 @@
-package dormitoryMS.domain.user.student.repository;
+package uniteProject.domain.user.student.repository;
 
-import dormitoryMS.domain.user.student.Student;
-import dormitoryMS.domain.user.student.Graduate;
-import dormitoryMS.domain.user.student.Undergraduate;
-import dormitoryMS.global.jdbc.MySqlDBConnection;
+import uniteProject.domain.user.student.Student;
+import uniteProject.domain.user.student.Graduate;
+import uniteProject.domain.user.student.Undergraduate;
+import uniteProject.global.jdbc.MySqlDBConnection;
 
 import java.sql.*;
 

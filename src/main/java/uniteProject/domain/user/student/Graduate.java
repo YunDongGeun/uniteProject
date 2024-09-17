@@ -1,6 +1,4 @@
-package dormitoryMS.domain.user.student;
-
-import dormitoryMS.domain.user.student.Student;
+package uniteProject.domain.user.student;
 
 public class Graduate extends Student {
 
