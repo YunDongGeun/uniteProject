@@ -11,7 +11,7 @@ public class StudentService {
     }
 
     public void createStudent(Student student) {
-        studentRepository.save(student);
+//        studentRepository.save(student);
     }
 
 //    public Student getStudent(int id) {

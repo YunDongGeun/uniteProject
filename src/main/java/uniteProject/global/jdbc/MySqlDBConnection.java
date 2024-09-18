@@ -9,7 +9,7 @@ public class MySqlDBConnection {
     private final String PASSWORD;
     private Connection connection;
 
-    public MySqlDBConnection() {
+    public MySqlDBConnection(String test) {
         USER = "root";
         PASSWORD = "12341234";
     }
