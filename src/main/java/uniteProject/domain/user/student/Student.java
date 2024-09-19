@@ -1,5 +1,12 @@
 package uniteProject.domain.user.student;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+@Getter
+@Setter
+@ToString
 public abstract class Student{
     protected String name;
     protected String studentId;  // 8자리 숫자
@@ -12,39 +19,6 @@ public abstract class Student{
         this.gpa = gpa;
         this.distanceToSchool = distanceToSchool;
     }
-
-    public String getStudentId() {
-        return studentId;
-    }
-
-    public void setStudentId(String studentId) {
-        this.studentId = studentId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public double getGpa() {
-        return gpa;
-    }
-
-    public void setGpa(double gpa) {
-        this.gpa = gpa;
-    }
-
-    public double getDistanceToSchool() {
-        return distanceToSchool;
-    }
-
-    public void setDistanceToSchool(double distanceToSchool) {
-        this.distanceToSchool = distanceToSchool;
-    }
-
     public abstract String getUserType();
 
     public abstract String getStudentType();

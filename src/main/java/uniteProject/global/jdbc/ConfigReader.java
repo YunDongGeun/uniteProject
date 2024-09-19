@@ -4,7 +4,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class ConfigReader {
-    private Properties properties;
+    private final Properties properties;
 
     public ConfigReader() {
         properties = new Properties();
