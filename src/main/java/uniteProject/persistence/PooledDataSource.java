@@ -3,9 +3,11 @@ package uniteProject.persistence;
 import org.apache.commons.dbcp2.BasicDataSource;
 
 import javax.sql.DataSource;
+import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.Properties;
 
 public class PooledDataSource {
@@ -15,8 +17,8 @@ public class PooledDataSource {
             basicDS = new BasicDataSource();
             Properties properties = new Properties();
             Class<PooledDataSource> pooledDataSourceClass = PooledDataSource.class;
-            InputStream inputStream = pooledDataSourceClass.getClassLoader().getResourceAsStream("config/db.yml");
-            properties.load(inputStream);
+            BufferedInputStream bis = new BufferedInputStream(Objects.requireNonNull(pooledDataSourceClass.getClassLoader().getResourceAsStream("config/db.yml")));
+            properties.load(bis);
             basicDS.setDriverClassName(properties.getProperty("DRIVER_CLASS")); //loads the jdbc driver
             basicDS.setUrl(properties.getProperty("DB_CONNECTION_URL"));
             basicDS.setUsername(properties.getProperty("DB_USER"));
