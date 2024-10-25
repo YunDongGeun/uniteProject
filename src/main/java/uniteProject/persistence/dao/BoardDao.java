@@ -1,13 +1,16 @@
 package uniteProject.persistence.dao;
 
+import uniteProject.persistence.PooledDataSource;
 import uniteProject.persistence.dto.BoardDto;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class BoardDao {
+    private final DataSource ds = PooledDataSource.getDataSource();
 
     public List<BoardDto> findAll(){
         Connection conn = null;
@@ -17,8 +20,9 @@ public class BoardDao {
 
         List<BoardDto> boardDTOs = new ArrayList<>();
         try {
-            String url = "jdbc:mysql://localhost/uniteDB?characterEncoding=utf8&serverTimezone=UTC&useSSL=false";
-            conn = DriverManager.getConnection(url, "root", "12341234");
+//            String url = "jdbc:mysql://localhost/uniteDB?characterEncoding=utf8&serverTimezone=UTC&useSSL=false";
+//            conn = DriverManager.getConnection(url, "root", "12341234");
+            conn = ds.getConnection();
             stmt = conn.createStatement();
             rs = stmt.executeQuery(sql);
             while (rs.next()) {
