@@ -1,14 +1,3 @@
-create table board
-(
-    id       bigint auto_increment
-        primary key,
-    title    varchar(45) null,
-    writer   varchar(45) null,
-    contents varchar(45) null,
-    regdate  datetime    null,
-    hit      int         null
-);
-
 create table dormitory
 (
     id        int auto_increment
@@ -39,6 +28,24 @@ create table members
     created_at datetime     not null
 );
 
+create table payment
+(
+    id             int auto_increment
+        primary key,
+    application_id int not null
+);
+
+create table period
+(
+    id                     int auto_increment
+        primary key,
+    application_start      datetime not null,
+    announcement           datetime not null,
+    payment_deadline       datetime not null,
+    document_deadline      datetime not null,
+    additional_application datetime not null
+);
+
 create table room
 (
     room_id      int auto_increment
@@ -66,6 +73,20 @@ create table students
     submit_document      tinyint(1)   not null,
     constraint students_members_id_fk
         foreign key (member_id) references members (id)
+            on update cascade on delete cascade
+);
+
+create table application
+(
+    id             int auto_increment
+        primary key,
+    student_id     int                      not null,
+    status         varchar(50) default '대기' not null comment '''대기'' ''검토'' ''승인'' ''거부''',
+    priority_score int                      not null,
+    created_at     datetime                 not null,
+    update_at      datetime                 null,
+    constraint application_students_id_fk
+        foreign key (student_id) references students (id)
             on update cascade on delete cascade
 );
 
