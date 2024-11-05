@@ -46,7 +46,10 @@ create table payment
 (
     id             int auto_increment
         primary key,
-    application_id int not null
+    application_id int         not null,
+    amount         int         not null,
+    payment_status varchar(20) not null,
+    payment_date   datetime    null
 );
 
 create table period
