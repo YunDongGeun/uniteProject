@@ -48,7 +48,7 @@ create table period
 
 create table room
 (
-    room_id      int auto_increment
+    id      int auto_increment
         primary key,
     dormitory_id int      not null,
     room_number  int      not null,
