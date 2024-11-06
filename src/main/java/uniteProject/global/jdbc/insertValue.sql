@@ -1,7 +1,7 @@
-INSERT INTO dormitory (id, dorm_name, gender) VALUES (1, '오름', 'M');
-INSERT INTO dormitory (id, dorm_name, gender) VALUES (2, '오름', 'F');
-INSERT INTO dormitory (id, dorm_name, gender) VALUES (3, '푸름', 'M');
-INSERT INTO dormitory (id, dorm_name, gender) VALUES (4, '푸름', 'F');
+INSERT INTO dormitory (id, dorm_name, gender) VALUES (1, '오름관1동', 'M');
+INSERT INTO dormitory (id, dorm_name, gender) VALUES (2, '오름관2동', 'F');
+INSERT INTO dormitory (id, dorm_name, gender) VALUES (3, '푸름관1동', 'M');
+INSERT INTO dormitory (id, dorm_name, gender) VALUES (4, '푸름관2동', 'F');
 
 INSERT INTO fee_management (id, dorm_name, fee_type, amount) VALUES (1, '오름', 'ROOM_2', 628800);
 INSERT INTO fee_management (id, dorm_name, fee_type, amount) VALUES (2, '푸름', 'ROOM_2', 462000);
