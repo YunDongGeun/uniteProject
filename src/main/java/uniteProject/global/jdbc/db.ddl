@@ -30,6 +30,23 @@ create table members
     created_at datetime     not null
 );
 
+create table students
+(
+    id                   int auto_increment
+        primary key,
+    member_id            int          not null,
+    name                 varchar(256) not null,
+    student_number       varchar(256) not null,
+    student_type         varchar(128) not null,
+    major                varchar(256) not null,
+    gpa                  double       not null,
+    distance_from_school double       not null,
+    submit_document      tinyint(1)   not null,
+    constraint students_members_id_fk
+        foreign key (member_id) references members (id)
+            on update cascade on delete cascade
+);
+
 create table payment
 (
     id             int auto_increment
@@ -80,23 +97,6 @@ create table room_status
             on update cascade on delete set null
 );
 
-create table students
-(
-    id                   int auto_increment
-        primary key,
-    member_id            int          not null,
-    name                 varchar(256) not null,
-    student_number       varchar(256) not null,
-    student_type         varchar(128) not null,
-    major                varchar(256) not null,
-    gpa                  double       not null,
-    distance_from_school double       not null,
-    submit_document      tinyint(1)   not null,
-    constraint students_members_id_fk
-        foreign key (member_id) references members (id)
-            on update cascade on delete cascade
-);
-
 create table account
 (
     id             int auto_increment
@@ -109,6 +109,7 @@ create table account
             on update cascade on delete cascade
 );
 
+-- auto-generated definition
 create table application
 (
     id             int auto_increment
@@ -116,12 +117,14 @@ create table application
     student_id     int                      not null,
     status         varchar(50) default '대기' not null comment '''대기'' ''검토'' ''승인'' ''거부''',
     priority_score int                      not null,
-    is_paid          tinyint(1) default 0     not null comment '결제 여부 (0: 미결제, 1: 결제 완료)',
+    is_paid        tinyint(1)  default 0    not null comment '결제 여부 (0: 미결제, 1: 결제 완료)',
+    preference     tinyint(1)               null comment '지원 우선순위 (1: 1지망, 2: 2지망)',
     created_at     datetime                 not null,
     update_at      datetime                 null,
     constraint application_students_id_fk
-        foreign key (student_id) references students (id)
-            on update cascade on delete cascade
+        foreign key (student_id) references unitedb.students (id)
+            on update cascade on delete cascade,
+    check (`preference` in (1, 2))
 );
 
 create table tb_certificate
