@@ -57,15 +57,22 @@ create table payment
     payment_date   datetime    null
 );
 
-create table period
+create table schedule
 (
-    id                     int auto_increment
+    id         int auto_increment
         primary key,
-    application_start      datetime not null,
-    announcement           datetime not null,
-    payment_deadline       datetime not null,
-    document_deadline      datetime not null,
-    additional_application datetime not null
+    event_name varchar(256) not null,
+    start_time datetime     not null,
+    end_time   datetime     not null
+);
+
+CREATE TABLE recruitment (
+    id                int auto_increment
+        primary key,
+    dorm_name         varchar(50) not null,
+    capacity          int         not null,  -- 모집 인원
+    constraint fk_recruitment_dorm_name
+        foreign key (dorm_name) references dormitory (dorm_name)
 );
 
 create table room
@@ -109,23 +116,28 @@ create table account
             on update cascade on delete cascade
 );
 
--- auto-generated definition
 create table application
 (
     id             int auto_increment
         primary key,
     student_id     int                      not null,
+    recruitment_id int                      not null,
     status         varchar(50) default '대기' not null comment '''대기'' ''검토'' ''승인'' ''거부''',
     priority_score int                      not null,
     is_paid        tinyint(1)  default 0    not null comment '결제 여부 (0: 미결제, 1: 결제 완료)',
     preference     tinyint(1)               null comment '지원 우선순위 (1: 1지망, 2: 2지망)',
     created_at     datetime                 not null,
     update_at      datetime                 null,
+    constraint application_recruitment_fk
+        foreign key (recruitment_id) references unitedb.recruitment (id)
+            on update cascade on delete cascade,
     constraint application_students_id_fk
         foreign key (student_id) references unitedb.students (id)
             on update cascade on delete cascade,
     check (`preference` in (1, 2))
 );
+
+
 
 create table tb_certificate
 (
