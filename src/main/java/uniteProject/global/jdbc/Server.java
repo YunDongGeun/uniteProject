@@ -3,7 +3,7 @@ package uniteProject.global.jdbc;
 import uniteProject.domain.user.student.service.StudentService;
 
 public class Server {
-    private static final int PORT = 8080;
+    private static final int PORT = 545454;
     private final StudentService studentService;
 
     public Server() {
