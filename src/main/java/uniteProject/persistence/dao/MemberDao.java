@@ -1,7 +1,6 @@
 package uniteProject.persistence.dao;
 
 import uniteProject.persistence.PooledDataSource;
-import uniteProject.persistence.dto.BoardDto;
 import uniteProject.persistence.dto.MemberDto;
 
 import javax.sql.DataSource;

@@ -16,6 +16,9 @@ bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
 
+### My Ignore ###
+db.yml
+
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
