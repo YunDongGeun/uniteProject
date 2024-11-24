@@ -8,7 +8,7 @@ public class ConfigReader {
 
     public ConfigReader() {
         properties = new Properties();
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")) {
+        try (InputStream input = getClass().getClassLoader().getResourceAsStream("config/db.yml")) {
             if (input == null) {
                 System.out.println("config.properties not found");
                 return;
@@ -23,10 +23,10 @@ public class ConfigReader {
         return properties.getProperty(key);
     }
 
-    public static void main(String[] args) {
-        ConfigReader config = new ConfigReader();
-        System.out.println("JDBC URL: " + config.getProperty("jdbc.url"));
-        System.out.println("JDBC Username: " + config.getProperty("jdbc.user"));
-        System.out.println("JDBC Password: " + config.getProperty("jdbc.password"));
-    }
+//    public static void main(String[] args) {
+//        ConfigReader config = new ConfigReader();
+//        System.out.println("JDBC URL: " + config.getProperty("DB_CONNECTION_URL"));
+//        System.out.println("JDBC Username: " + config.getProperty("DB_USER"));
+//        System.out.println("JDBC Password: " + config.getProperty("DB_PWD"));
+//    }
 }
