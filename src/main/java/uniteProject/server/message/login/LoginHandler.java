@@ -5,7 +5,6 @@ import uniteProject.server.message.LoginMessage;
 import java.io.*;
 import java.net.*;
 
-// LoginHandler 쓰레드 클래스 생성
 public class LoginHandler extends Thread {
     private final Socket clientSocket;
     private ObjectInputStream ois;
