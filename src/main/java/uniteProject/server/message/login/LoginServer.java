@@ -1,10 +1,9 @@
 package uniteProject.server.message.login;
 
-import uniteProject.server.message.Protocol;
+import uniteProject.global.Protocol;
 
 import java.io.*;
 import java.net.*;
-import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 

@@ -1,4 +1,4 @@
-package uniteProject.server.message;
+package uniteProject.global;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -25,6 +25,15 @@ public class Protocol {
     public static final int LEN_CODE = 1;            // 코드 길이
     public static final int LEN_LENGTH = 2;          // 길이 필드의 길이
     public static final int LEN_HEADER = 4;          // 헤더의 길이 (타입 + 코드 + 길이)
+
+    // 회원가입 관련
+    public static final byte TYPE_REGISTER = 0x08;
+    public static final byte CODE_REGISTER_REQUEST = 0x01;
+
+    // 응답 메시지를 위한 상수
+    public static final String MSG_REGISTER_SUCCESS = "회원가입이 완료되었습니다.";
+    public static final String MSG_REGISTER_FAIL = "회원가입에 실패했습니다.";
+    public static final String MSG_DUPLICATE_USER = "이미 존재하는 사용자입니다.";
 
     @Setter
     protected byte type;
