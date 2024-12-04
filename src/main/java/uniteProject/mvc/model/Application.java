@@ -14,7 +14,7 @@ public class Application {
     private Long studentId;
     private String status;
     private Boolean isPaid;
-    private Boolean preference;
+    private String preference;
     private Integer priorityScore;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
