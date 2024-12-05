@@ -1,7 +1,6 @@
 package uniteProject.mvc.service.interfaces;
 
 import uniteProject.global.Protocol;
-import uniteProject.persistence.dto.req_res.Response;
 
 public interface AuthService {
     /**
