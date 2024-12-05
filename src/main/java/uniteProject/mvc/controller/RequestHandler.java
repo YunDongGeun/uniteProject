@@ -1,7 +1,6 @@
 package uniteProject.mvc.controller;
 
 import lombok.RequiredArgsConstructor;
-import uniteProject.exception.ServerException;
 import uniteProject.global.Protocol;
 import uniteProject.mvc.service.interfaces.*;
 
@@ -60,18 +59,8 @@ public class RequestHandler {
         return switch (protocol.getCode()) {
             case Protocol.CODE_SCHEDULE_VIEW -> scheduleService.getSchedule(protocol.getData());
             case Protocol.CODE_SCHEDULE_FEE_VIEW -> scheduleService.getFees(protocol.getData());
-            case Protocol.CODE_SCHEDULE_REG -> {
-                if (!isAdmin(protocol)) {
-                    yield new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_NO_AUTH);
-                }
-                yield scheduleService.registerSchedule(protocol.getData());
-            }
-            case Protocol.CODE_SCHEDULE_FEE_REG -> {
-                if (!isAdmin(protocol)) {
-                    yield new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_NO_AUTH);
-                }
-                yield scheduleService.registerFees(protocol.getData());
-            }
+            case Protocol.CODE_SCHEDULE_REG -> scheduleService.registerSchedule(protocol.getData());
+            case Protocol.CODE_SCHEDULE_FEE_REG -> scheduleService.registerFees(protocol.getData());
             default -> new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_INVALID_REQ);
         };
     }
@@ -80,18 +69,8 @@ public class RequestHandler {
         return switch (protocol.getCode()) {
             case Protocol.CODE_ROOM_PASS_CHECK -> roomAssignmentService.checkPassStatus(protocol.getData());
             case Protocol.CODE_ROOM_INFO -> roomAssignmentService.checkRoomInfo(protocol.getData());
-            case Protocol.CODE_ROOM_SELECT -> {
-                if (!isAdmin(protocol)) {
-                    yield new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_NO_AUTH);
-                }
-                yield roomAssignmentService.selectPassedStudents(protocol.getData());
-            }
-            case Protocol.CODE_ROOM_ASSIGN -> {
-                if (!isAdmin(protocol)) {
-                    yield new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_NO_AUTH);
-                }
-                yield roomAssignmentService.assignRooms(protocol.getData());
-            }
+            case Protocol.CODE_ROOM_SELECT -> roomAssignmentService.selectPassedStudents(protocol.getData());
+            case Protocol.CODE_ROOM_ASSIGN -> roomAssignmentService.assignRooms(protocol.getData());
             default -> new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_INVALID_REQ);
         };
     }
@@ -100,18 +79,8 @@ public class RequestHandler {
         return switch (protocol.getCode()) {
             case Protocol.CODE_PAYMENT_AMOUNT -> paymentService.getPaymentAmount(protocol.getData());
             case Protocol.CODE_PAYMENT_PAY -> paymentService.processPayment(protocol.getData());
-            case Protocol.CODE_PAYMENT_PAID_LIST -> {
-                if (!isAdmin(protocol)) {
-                    yield new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_NO_AUTH);
-                }
-                yield paymentService.getPaidList(protocol.getData());
-            }
-            case Protocol.CODE_PAYMENT_UNPAID_LIST -> {
-                if (!isAdmin(protocol)) {
-                    yield new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_NO_AUTH);
-                }
-                yield paymentService.getUnpaidList(protocol.getData());
-            }
+            case Protocol.CODE_PAYMENT_PAID_LIST -> paymentService.getPaidList(protocol.getData());
+            case Protocol.CODE_PAYMENT_UNPAID_LIST -> paymentService.getUnpaidList(protocol.getData());
             default -> new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_INVALID_REQ);
         };
     }
@@ -128,18 +97,8 @@ public class RequestHandler {
         return switch (protocol.getCode()) {
             case Protocol.CODE_WITHDRAWAL_REQ -> withdrawalService.submitWithdrawal(protocol.getData());
             case Protocol.CODE_WITHDRAWAL_STATUS -> withdrawalService.checkRefundStatus(protocol.getData());
-            case Protocol.CODE_WITHDRAWAL_LIST -> {
-                if (!isAdmin(protocol)) {
-                    yield new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_NO_AUTH);
-                }
-                yield withdrawalService.getWithdrawalList(protocol.getData());
-            }
-            case Protocol.CODE_WITHDRAWAL_REFUND -> {
-                if (!isAdmin(protocol)) {
-                    yield new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_NO_AUTH);
-                }
-                yield withdrawalService.processRefund(protocol.getData());
-            }
+            case Protocol.CODE_WITHDRAWAL_LIST -> withdrawalService.getWithdrawalList(protocol.getData());
+            case Protocol.CODE_WITHDRAWAL_REFUND -> withdrawalService.processRefund(protocol.getData());
             default -> new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_INVALID_REQ);
         };
     }

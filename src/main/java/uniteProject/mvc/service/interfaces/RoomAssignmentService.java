@@ -1,12 +1,11 @@
 package uniteProject.mvc.service.interfaces;
 
-import uniteProject.persistence.dto.req_res.Response;
+import uniteProject.global.Protocol;
 
 public interface RoomAssignmentService {
-    Response checkPassStatus(byte[] data);
-    Response checkRoomInfo(byte[] data);
-    Response selectPassedStudents(byte[] data);
-    Response assignRooms(byte[] data);
+    Protocol checkPassStatus(byte[] data);
+    Protocol checkRoomInfo(byte[] data);
+    Protocol selectPassedStudents(byte[] data);
+    Protocol assignRooms(byte[] data);
 
-    byte[] handleRoomAssignmentRequest(byte code, byte[] data);
 }

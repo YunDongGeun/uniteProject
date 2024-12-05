@@ -26,15 +26,15 @@ public class ApplicationServiceImpl implements ApplicationService {
         try {
             if (data == null || data.length > Protocol.LEN_MAX) {
                 response.setCode(Protocol.CODE_INVALID_REQ);
-                response.setData("데이터 크기가 유효하지 않습니다.");
+                response.setData("데이터 크기가 유효하지 않습니다.".getBytes());
                 return response;
             }
 
-            // data format: "studentNumber,dormitoryPreference,additionalNote"
-            String[] applicationData = new String(data, StandardCharsets.UTF_8).split(",");
+            // data format: "studentNumber dormitoryPreference additionalNote"
+            String[] applicationData = new String(data, StandardCharsets.UTF_8).split(" ");
             if (applicationData.length < 2) {
                 response.setCode(Protocol.CODE_INVALID_REQ);
-                response.setData("필수 신청 정보가 부족합니다.");
+                response.setData("필수 신청 정보가 부족합니다.".getBytes());
                 return response;
             }
 
@@ -48,7 +48,7 @@ public class ApplicationServiceImpl implements ApplicationService {
             // 기존 신청 내역 확인
             if (applicationRepository.existsByStudentId(student.getId())) {
                 response.setCode(Protocol.CODE_FAIL);
-                response.setData("이미 신청 내역이 존재합니다.");
+                response.setData("이미 신청 내역이 존재합니다.".getBytes());
                 return response;
             }
 
@@ -64,11 +64,11 @@ public class ApplicationServiceImpl implements ApplicationService {
                     .build();
 
             applicationRepository.save(application);
-            response.setData("입사 신청이 완료되었습니다.");
+            response.setData("입사 신청이 완료되었습니다.".getBytes());
 
         } catch (Exception e) {
             response.setCode(Protocol.CODE_FAIL);
-            response.setData("신청 처리 중 오류가 발생했습니다: " + e.getMessage());
+            response.setData(("신청 처리 중 오류가 발생했습니다: " + e.getMessage()).getBytes());
         }
 
         return response;
@@ -92,15 +92,15 @@ public class ApplicationServiceImpl implements ApplicationService {
                         application.get().getIsPaid() ? "완료" : "미납",
                         application.get().getCreatedAt().toString()
                 );
-                response.setData(statusInfo);
+                response.setData(statusInfo.getBytes());
             } else {
                 response.setCode(Protocol.CODE_FAIL);
-                response.setData("신청 내역이 존재하지 않습니다.");
+                response.setData("신청 내역이 존재하지 않습니다.".getBytes());
             }
 
         } catch (Exception e) {
             response.setCode(Protocol.CODE_FAIL);
-            response.setData("상태 조회 중 오류가 발생했습니다: " + e.getMessage());
+            response.setData(("상태 조회 중 오류가 발생했습니다: " + e.getMessage()).getBytes());
         }
 
         return response;
@@ -139,7 +139,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         } catch (Exception e) {
             response.setCode(Protocol.CODE_FAIL);
-            response.setData("목록 조회 중 오류가 발생했습니다: " + e.getMessage());
+            response.setData(("목록 조회 중 오류가 발생했습니다: " + e.getMessage()).getBytes());
         }
 
         return response;
@@ -159,8 +159,6 @@ public class ApplicationServiceImpl implements ApplicationService {
             else if (student.getDistanceFromSchool() > 10.0) score += 20;
             else if (student.getDistanceFromSchool() > 5.0) score += 10;
         }
-
-        // 추가 점수 조건들...
 
         return score;
     }

@@ -42,9 +42,9 @@ public class AuthServiceImpl implements AuthService {
             boolean exists = memberRepository.existsByUsername(username);
             if (exists) {
                 response.setCode(Protocol.CODE_FAIL);
-                response.setData("이미 존재하는 ID입니다.");
+                response.setData("이미 존재하는 ID 입니다.");
             } else {
-                response.setData("사용 가능한 ID입니다.");
+                response.setData("사용 가능한 ID 입니다.");
             }
 
             return response;

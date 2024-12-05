@@ -1,12 +1,11 @@
 package uniteProject.mvc.service.interfaces;
 
-import uniteProject.persistence.dto.req_res.Response;
+import uniteProject.global.Protocol;
 
 public interface ScheduleService {
-    Response getSchedule(byte[] data);
-    Response getFees(byte[] data);
-    Response registerSchedule(byte[] data);
-    Response registerFees(byte[] data);
+    Protocol getSchedule(byte[] data);
+    Protocol getFees(byte[] data);
+    Protocol registerSchedule(byte[] data);
+    Protocol registerFees(byte[] data);
 
-    byte[] handleScheduleRequest(byte code, byte[] data);
 }

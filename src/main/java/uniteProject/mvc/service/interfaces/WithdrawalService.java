@@ -1,12 +1,12 @@
 package uniteProject.mvc.service.interfaces;
 
+import uniteProject.global.Protocol;
 import uniteProject.persistence.dto.req_res.Response;
 
 public interface WithdrawalService {
-    Response submitWithdrawal(byte[] data);
-    Response checkRefundStatus(byte[] data);
-    Response getWithdrawalList(byte[] data);
-    Response processRefund(byte[] data);
+    Protocol submitWithdrawal(byte[] data);
+    Protocol checkRefundStatus(byte[] data);
+    Protocol getWithdrawalList(byte[] data);
+    Protocol processRefund(byte[] data);
 
-    byte[] handleWithdrawalRequest(byte code, byte[] data);
 }

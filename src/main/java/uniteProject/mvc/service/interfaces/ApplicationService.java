@@ -25,5 +25,4 @@ public interface ApplicationService {
      */
     Protocol getApplicationList(byte[] data);
 
-    byte[] handleApplicationRequest(byte code, byte[] data);
 }
