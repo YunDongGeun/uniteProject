@@ -1,7 +1,6 @@
 package uniteProject.mvc.service.impl;
 
 import lombok.RequiredArgsConstructor;
-import uniteProject.exception.ServerException;
 import uniteProject.global.Protocol;
 import uniteProject.mvc.model.Member;
 import uniteProject.mvc.model.Student;
@@ -146,7 +145,7 @@ public class AuthServiceImpl implements AuthService {
 
             Member savedMember = memberRepository.save(member);
 
-            // 학생 정보 생성 (role이 STUDENT인 경우)
+            // 학생 정보 생성 role -> STUDENT 일때
             if ("STUDENT".equals(role)) {
                 Student student = Student.builder()
                         .memberId(savedMember.getId())

@@ -35,13 +35,23 @@ public class ApplicationRepository {
         }
     }
 
+    public Optional<Application> findById(Long Id) {
+        String sql = "SELECT * FROM application WHERE id = ?";
+
+        return getApplication(Id, sql);
+    }
+
     public Optional<Application> findByStudentId(Long studentId) {
         String sql = "SELECT * FROM application WHERE student_id = ?";
 
+        return getApplication(studentId, sql);
+    }
+
+    private Optional<Application> getApplication(Long id, String sql) {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
 
-            stmt.setLong(1, studentId);
+            stmt.setLong(1, id);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {
@@ -96,9 +106,7 @@ public class ApplicationRepository {
 
     private Application insert(Application application) {
         String sql = """
-            INSERT INTO application 
-            (student_id, status, is_paid, preference, priority_score, created_at, updated_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO application (student_id, status, is_paid, preference, priority_score, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)
             """;
 
         try (Connection connection = dataSource.getConnection();
@@ -119,10 +127,7 @@ public class ApplicationRepository {
 
     private Application update(Application application) {
         String sql = """
-            UPDATE application 
-            SET student_id = ?, status = ?, is_paid = ?, preference = ?, 
-                priority_score = ?, updated_at = ? 
-            WHERE id = ?
+            UPDATE application SET student_id = ?, status = ?, is_paid = ?, preference = ?, priority_score = ?, updated_at = ? WHERE id = ?
             """;
 
         try (Connection connection = dataSource.getConnection();
