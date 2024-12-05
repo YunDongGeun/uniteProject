@@ -97,6 +97,37 @@ public class ApplicationRepository {
         }
     }
 
+    public List<Application> findAllByOrderByPriorityScoreDesc() {
+        String sql = "SELECT * FROM application ORDER BY priority_score DESC";
+        try (Connection connection = dataSource.getConnection();
+             Statement stmt = connection.createStatement()) {
+            ResultSet rs = stmt.executeQuery(sql);
+            List<Application> applications = new ArrayList<>();
+            while (rs.next()) {
+                applications.add(mapResultSetToApplication(rs));
+            }
+            return applications;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find applications: " + e.getMessage());
+        }
+    }
+
+    public List<Application> findAllByStatus(String status) {
+        String sql = "SELECT * FROM application WHERE status = ?";
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, status);
+            ResultSet rs = stmt.executeQuery();
+            List<Application> applications = new ArrayList<>();
+            while (rs.next()) {
+                applications.add(mapResultSetToApplication(rs));
+            }
+            return applications;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find applications by status: " + e.getMessage());
+        }
+    }
+
     public Application save(Application application) {
         if (application.getId() == null) {
             return insert(application);
@@ -164,4 +195,5 @@ public class ApplicationRepository {
                 .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
                 .build();
     }
+
 }

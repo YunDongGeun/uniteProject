@@ -150,7 +150,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         // GPA 점수 (최대 50점)
         if (student.getGpa() != null) {
-            score += student.getGpa() * 10; // 4.5 만점 기준 최대 45점
+            score += (int) (student.getGpa() * 10); // 4.5 만점 기준 최대 45점
         }
 
         // 거리 점수 (최대 30점)
