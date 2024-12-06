@@ -11,6 +11,7 @@ import uniteProject.mvc.service.interfaces.RoomAssignmentService;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Random;
 
 @RequiredArgsConstructor
 public class RoomAssignmentServiceImpl implements RoomAssignmentService {
@@ -114,12 +115,14 @@ public class RoomAssignmentServiceImpl implements RoomAssignmentService {
     }
 
     private Room findSuitableRoom(List<Room> rooms, Student student) {
-        // 적합한 방 찾기
-        return rooms.get(0);
+        if (rooms == null || rooms.isEmpty()) {
+            throw new RuntimeException("사용 가능한 방이 없습니다.");
+        }
+        Random random = new Random();
+        return rooms.get(random.nextInt(rooms.size()));
     }
 
     private String findAvailableBed(Room room) {
-        // 사용 가능한 침대 번호 찾기
-        return "1";
+        return roomRepository.findAvailableBed(room);
     }
 }

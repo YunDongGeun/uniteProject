@@ -11,5 +11,5 @@ public class Room {
     private Long id;
     private Long dormitoryId;
     private Integer roomNumber;
-    private String roomType;
+    private Integer roomType;
 }

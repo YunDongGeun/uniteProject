@@ -6,6 +6,7 @@ import uniteProject.mvc.model.Room;
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -49,12 +50,40 @@ public class RoomRepository {
         }
     }
 
+    public String findAvailableBed(Room room) {
+        String sql = "SELECT bed_number FROM room_status WHERE room_id = ? ORDER BY bed_number";
+        List<String> occupiedBeds = new ArrayList<>();
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setLong(1, room.getId());
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                occupiedBeds.add(rs.getString("bed_number"));
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find occupied beds: " + e.getMessage());
+        }
+
+        List<String> availableBeds = room.getRoomType() == 2 ?
+                Arrays.asList("A", "B") :
+                Arrays.asList("A", "B", "C", "D");
+
+        for (String bed : availableBeds) {
+            if (!occupiedBeds.contains(bed)) {
+                return bed;
+            }
+        }
+
+        throw new RuntimeException("사용 가능한 침대가 없습니다.");
+    }
+
     private Room mapResultSetToRoom(ResultSet rs) throws SQLException {
         return Room.builder()
                 .id(rs.getLong("id"))
                 .dormitoryId(rs.getLong("dormitory_id"))
                 .roomNumber(rs.getInt("room_number"))
-                .roomType(rs.getString("room_type"))
+                .roomType(rs.getInt("room_type"))
                 .build();
     }
 }
