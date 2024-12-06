@@ -1,5 +1,6 @@
 package uniteProject.mvc.repository;
 
+import lombok.RequiredArgsConstructor;
 import uniteProject.mvc.model.Student;
 import uniteProject.persistence.PooledDataSource;
 
@@ -7,12 +8,9 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Optional;
 
+@RequiredArgsConstructor
 public class StudentRepository {
     private final DataSource dataSource;
-
-    public StudentRepository() {
-        this.dataSource = PooledDataSource.getDataSource();
-    }
 
     public Optional<Student> findByStudentNumber(String studentNumber) {
         String sql = "SELECT * FROM students WHERE student_number = ?";

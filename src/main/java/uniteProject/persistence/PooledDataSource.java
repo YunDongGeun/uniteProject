@@ -22,8 +22,8 @@ public class PooledDataSource {
             basicDS.setUsername(properties.getProperty("DB_USER"));
             basicDS.setPassword(properties.getProperty("DB_PWD"));
             // Parameters for connection pooling
-            basicDS.setInitialSize(10);
-            basicDS.setMaxTotal(10);
+            basicDS.setInitialSize(15);
+            basicDS.setMaxTotal(15);
         } catch (IOException e) {
             e.printStackTrace();
         }

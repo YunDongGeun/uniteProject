@@ -1,5 +1,6 @@
 package uniteProject.mvc.repository;
 
+import lombok.RequiredArgsConstructor;
 import uniteProject.mvc.model.Member;
 import uniteProject.persistence.PooledDataSource;
 
@@ -7,12 +8,9 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.Optional;
 
+@RequiredArgsConstructor
 public class MemberRepository {
     private final DataSource dataSource;
-
-    public MemberRepository() {
-        this.dataSource = PooledDataSource.getDataSource();
-    }
 
     public Optional<Member> findByUsername(String username) {
         String sql = "SELECT * FROM members WHERE username = ?";

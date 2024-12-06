@@ -1,5 +1,6 @@
 package uniteProject.mvc.repository;
 
+import lombok.RequiredArgsConstructor;
 import uniteProject.mvc.model.Application;
 import uniteProject.persistence.PooledDataSource;
 
@@ -10,12 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@RequiredArgsConstructor
 public class ApplicationRepository {
     private final DataSource dataSource;
-
-    public ApplicationRepository() {
-        this.dataSource = PooledDataSource.getDataSource();
-    }
 
     public boolean existsByStudentId(Long studentId) {
         String sql = "SELECT COUNT(*) FROM application WHERE student_id = ?";
