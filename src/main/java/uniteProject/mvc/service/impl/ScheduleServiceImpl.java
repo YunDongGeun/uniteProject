@@ -74,10 +74,20 @@ public class ScheduleServiceImpl implements ScheduleService {
                 throw new IllegalArgumentException("필수 일정 정보가 부족합니다.");
             }
 
+            LocalDateTime startTime = null;
+            LocalDateTime endTime = null;
+            if (scheduleData[1].length() <= 10) {
+                startTime = LocalDateTime.parse(scheduleData[1], DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+                endTime = LocalDateTime.parse(scheduleData[2], DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            } else if (scheduleData[1].length() > 11) {
+                startTime = LocalDateTime.parse(scheduleData[1], DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+                endTime = LocalDateTime.parse(scheduleData[2], DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+            }
+
             Schedule schedule = Schedule.builder()
                     .eventName(scheduleData[0])
-                    .startTime(LocalDateTime.parse(scheduleData[1]))
-                    .endTime(LocalDateTime.parse(scheduleData[2]))
+                    .startTime(startTime)
+                    .endTime(endTime)
                     .build();
 
             scheduleRepository.save(schedule);
