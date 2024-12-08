@@ -148,6 +148,11 @@ public class ApplicationServiceImpl implements ApplicationService {
     private int calculatePriorityScore(Student student) {
         int score = 0;
 
+        // 학생 유형에 따른 우선순위 점수 (대학원생 우선)
+        if ("대학원생".equals(student.getStudentType())) {
+            score += 1000;
+        }
+
         // GPA 점수 (최대 50점)
         if (student.getGpa() != null) {
             score += (int) (student.getGpa() * 10); // 4.5 만점 기준 최대 45점
