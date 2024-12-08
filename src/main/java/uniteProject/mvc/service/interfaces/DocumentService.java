@@ -10,6 +10,11 @@ public interface DocumentService {
      */
     Protocol submitTBCertificate(byte[] data);
 
+    /**
+     * 제출 상태 확인
+     * @param data 제출 상태(제출 완료, 미제출), 제출 시간
+     * @return 제출 상태를 포함한 Protocol 객체
+     */
     Protocol checkSubmissionStatus(byte[] data);
 
 }
