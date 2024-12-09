@@ -10,6 +10,7 @@ import uniteProject.mvc.repository.DocumentRepository;
 import uniteProject.mvc.repository.StudentRepository;
 import uniteProject.mvc.service.interfaces.DocumentService;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -76,16 +77,37 @@ public class DocumentServiceImpl implements DocumentService {
             Optional<TBCertificate> certificate = documentRepository.findByApplicationId(application.getId());
 
             if (certificate.isPresent()) {
-                String submissionInfo = String.format("제출완료,제출시간:%s",
-                        certificate.get().getUploadedAt().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                response.setData(submissionInfo);
+                // 제출 시간과 이미지 데이터를 결합
+                LocalDateTime uploadTime = certificate.get().getUploadedAt();
+                String timeString = uploadTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+                byte[] timeBytes = timeString.getBytes(StandardCharsets.UTF_8);
+                byte[] imageBytes = certificate.get().getImage();
+
+                // 결과 형식: [상태코드(1byte)],[시간문자열길이(4bytes)],[시간문자열],[이미지데이터]
+                byte[] resultData = new byte[1 + 4 + timeBytes.length + imageBytes.length];
+
+                // 상태코드 1: 제출완료
+                resultData[0] = 1;
+
+                // 시간문자열 길이 (4bytes)
+                byte[] lengthBytes = ByteBuffer.allocate(4).putInt(timeBytes.length).array();
+                System.arraycopy(lengthBytes, 0, resultData, 1, 4);
+
+                // 시간문자열 복사
+                System.arraycopy(timeBytes, 0, resultData, 5, timeBytes.length);
+
+                // 이미지 데이터 복사
+                System.arraycopy(imageBytes, 0, resultData, 5 + timeBytes.length, imageBytes.length);
+
+                response.setData(resultData);
             } else {
-                response.setData("미제출");
+                // 미제출인 경우 상태코드만 전송 (0: 미제출)
+                response.setData(new byte[]{0});
             }
 
         } catch (Exception e) {
             response.setCode(Protocol.CODE_FAIL);
-            response.setData("제출 상태 확인 중 오류가 발생했습니다: " + e.getMessage());
+            response.setData(("제출 상태 확인 중 오류가 발생했습니다: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
         }
 
         return response;
