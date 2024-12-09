@@ -58,7 +58,11 @@ public class PaymentRepository {
             stmt.setLong(1, payment.getApplicationId());
             stmt.setInt(2, payment.getAmount());
             stmt.setString(3, payment.getPaymentStatus());
-            stmt.setTimestamp(4, Timestamp.valueOf(payment.getPaymentDate()));
+            if (payment.getPaymentDate() != null) {
+                stmt.setTimestamp(4, Timestamp.valueOf(payment.getPaymentDate()));
+            } else {
+                stmt.setNull(4, Types.TIMESTAMP);
+            }
 
             stmt.executeUpdate();
 

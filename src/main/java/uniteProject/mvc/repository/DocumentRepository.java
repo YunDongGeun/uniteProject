@@ -56,9 +56,16 @@ public class DocumentRepository {
              PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             stmt.setLong(1, certificate.getApplicationId());
-            stmt.setBytes(2, certificate.getImage());
-            stmt.setTimestamp(3, Timestamp.valueOf(certificate.getUploadedAt()));
-
+            if (certificate.getImage() != null) {
+                stmt.setBytes(2, certificate.getImage());
+            } else {
+                stmt.setNull(2, Types.BINARY);
+            }
+            if (certificate.getUploadedAt() != null) {
+                stmt.setTimestamp(3, Timestamp.valueOf(certificate.getUploadedAt()));
+            } else {
+                stmt.setNull(3, Types.TIMESTAMP);
+            }
             stmt.executeUpdate();
 
             ResultSet generatedKeys = stmt.getGeneratedKeys();

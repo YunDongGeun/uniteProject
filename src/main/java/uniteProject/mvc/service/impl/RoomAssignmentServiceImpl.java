@@ -2,15 +2,14 @@ package uniteProject.mvc.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import uniteProject.global.Protocol;
-import uniteProject.mvc.model.Application;
-import uniteProject.mvc.model.Room;
-import uniteProject.mvc.model.RoomStatus;
-import uniteProject.mvc.model.Student;
+import uniteProject.mvc.model.*;
 import uniteProject.mvc.repository.*;
 import uniteProject.mvc.service.interfaces.RoomAssignmentService;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 @RequiredArgsConstructor
@@ -19,6 +18,10 @@ public class RoomAssignmentServiceImpl implements RoomAssignmentService {
     private final ApplicationRepository applicationRepository;
     private final StudentRepository studentRepository;
     private final RoomRepository roomRepository;
+    private final PaymentRepository paymentRepository;
+    private final DocumentRepository documentRepository;
+    private final RecruitmentRepository recruitmentRepository;
+    private final FeeManagementRepository feeManagementRepository;
     private final DormitoryRepository dormitoryRepository;
 
     @Override
@@ -69,12 +72,42 @@ public class RoomAssignmentServiceImpl implements RoomAssignmentService {
         Protocol response = new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_SUCCESS);
         try {
             List<Application> applications = applicationRepository.findAllByOrderByPriorityScoreDesc();
+            int passedCount = 0;
+
             for (Application app : applications) {
-                app.setStatus("PASSED");
-                applicationRepository.save(app);
+                if (Objects.equals(app.getStatus(), "대기")) {
+                    app.setStatus("선발");
+                    app.setUpdateAt(LocalDateTime.now());
+                    applicationRepository.save(app);
+
+                    String dormName = recruitmentRepository.findById(app.getRecruitmentId()).get().getDormName();
+
+                    int amount = 0;
+                    amount += feeManagementRepository.findByDormNameAndFeeType(dormName, "ROOM_"+app.getRoomType()).get().getAmount();
+                    amount += feeManagementRepository.findByDormNameAndFeeType(dormName, "MEAL_"+app.getMealType()).get().getAmount();
+
+                    // 1. 결제 정보 생성
+                    Payment payment = Payment.builder()
+                            .applicationId(app.getId())
+                            .amount(amount)  // 기숙사비 금액
+                            .paymentStatus("미납")  // 미납 상태
+                            .paymentDate(null)   // 납부 전이므로 날짜는 null
+                            .build();
+                    paymentRepository.save(payment);
+
+                    // 2. 결핵진단서 기본 엔트리 생성 (빈 데이터로)
+                    TBCertificate certificate = TBCertificate.builder()
+                            .applicationId(app.getId())
+                            .image(null)
+                            .uploadedAt(null)
+                            .build();
+                    documentRepository.save(certificate);
+
+                    passedCount++;
+                }
             }
 
-            String result = String.format("총 %d명의 합격자가 선발되었습니다.", applications.size());
+            String result = String.format("총 %d명의 합격자가 선발되었습니다. 결제 정보와 결핵진단서 제출 정보가 생성되었습니다.", passedCount);
             response.setData(result.getBytes());
         } catch (Exception e) {
             response.setCode(Protocol.CODE_FAIL);

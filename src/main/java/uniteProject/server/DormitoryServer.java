@@ -36,9 +36,11 @@ public class DormitoryServer {
         AuthService authService = new AuthServiceImpl(memberRepository, studentRepository);
         ApplicationService applicationService = new ApplicationServiceImpl(applicationRepository, studentRepository, recruitmentRepository);
         ScheduleService scheduleService = new ScheduleServiceImpl(scheduleRepository, feeManagementRepository);
+
         RoomAssignmentService roomAssignmentService = new RoomAssignmentServiceImpl(
-                roomStatusRepository, applicationRepository, studentRepository, roomRepository, dormitoryRepository
-        );
+                roomStatusRepository, applicationRepository, studentRepository, roomRepository, paymentRepository,
+                documentRepository, recruitmentRepository, feeManagementRepository, dormitoryRepository);
+
         PaymentService paymentService = new PaymentServiceImpl(paymentRepository, applicationRepository, studentRepository);
         DocumentService documentService = new DocumentServiceImpl(documentRepository, studentRepository, applicationRepository);
         WithdrawalService withdrawalService = new WithdrawalServiceImpl(withdrawalRepository, studentRepository);

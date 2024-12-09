@@ -144,9 +144,9 @@ public class ApplicationRepository {
 
     private Application insert(Application application) {
         String sql = """
-            INSERT INTO application (student_id, recruitment_id, status, is_paid, preference, 
+            INSERT INTO application (student_id, recruitment_id, room_type, meal_type, status, is_paid, preference, 
                                    priority_score, created_at, update_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
         try (Connection connection = dataSource.getConnection();
@@ -176,7 +176,7 @@ public class ApplicationRepository {
         try (Connection connection = dataSource.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
 
-            setApplicationParameters(stmt, application);
+            setUpdateParameters(stmt, application);
             stmt.setLong(8, application.getId());
             stmt.executeUpdate();
             return application;
@@ -185,15 +185,28 @@ public class ApplicationRepository {
         }
     }
 
-    private void setApplicationParameters(PreparedStatement stmt, Application application) throws SQLException {
+    private void setUpdateParameters(PreparedStatement stmt, Application application) throws SQLException {
         stmt.setLong(1, application.getStudentId());
         stmt.setLong(2, application.getRecruitmentId());
         stmt.setString(3, application.getStatus());
         stmt.setBoolean(4, application.getIsPaid());
         stmt.setInt(5, application.getPreference());
         stmt.setInt(6, application.getPriorityScore());
-        stmt.setTimestamp(7, Timestamp.valueOf(LocalDateTime.now()));
-        stmt.setTimestamp(8, Timestamp.valueOf(LocalDateTime.now()));
+        stmt.setTimestamp(7, Timestamp.valueOf(LocalDateTime.now()));  // update_at
+        stmt.setLong(8, application.getId());
+    }
+
+    private void setApplicationParameters(PreparedStatement stmt, Application application) throws SQLException {
+        stmt.setLong(1, application.getStudentId());
+        stmt.setLong(2, application.getRecruitmentId());
+        stmt.setInt(3, application.getRoomType());
+        stmt.setInt(4, application.getMealType());
+        stmt.setString(5, application.getStatus());
+        stmt.setBoolean(6, application.getIsPaid());
+        stmt.setInt(7, application.getPreference());
+        stmt.setInt(8, application.getPriorityScore());
+        stmt.setTimestamp(9, Timestamp.valueOf(LocalDateTime.now()));
+        stmt.setTimestamp(10, Timestamp.valueOf(LocalDateTime.now()));
     }
 
     private Application mapResultSetToApplication(ResultSet rs) throws SQLException {
@@ -208,6 +221,8 @@ public class ApplicationRepository {
                 .id(rs.getLong("id"))
                 .studentId(rs.getLong("student_id"))
                 .recruitmentId(rs.getLong("recruitment_id"))
+                .roomType(rs.getInt("room_type"))
+                .mealType(rs.getInt("meal_type"))
                 .status(rs.getString("status"))
                 .isPaid(rs.getBoolean("is_paid"))
                 .preference(rs.getInt("preference"))

@@ -13,6 +13,8 @@ public class Application {
     private Long id;
     private Long studentId;
     private Long recruitmentId;
+    private Integer roomType;
+    private Integer mealType;
     private String status;
     private Boolean isPaid;
     private Integer preference;

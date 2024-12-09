@@ -35,7 +35,7 @@ public class ApplicationServiceImpl implements ApplicationService {
                 return response;
             }
 
-            // data format: "studentNumber,dormName,dormitoryPreference"
+            // data format: "studentNumber,dormName,roomType,mealType,dormitoryPreference"
             String[] applicationData = new String(data, StandardCharsets.UTF_8).split(",");
             if (applicationData.length < 3) {
                 response.setCode(Protocol.CODE_INVALID_REQ);
@@ -45,7 +45,9 @@ public class ApplicationServiceImpl implements ApplicationService {
 
             String studentNumber = applicationData[0];
             String dormName = applicationData[1];
-            int dormitoryPreference = Integer.parseInt(applicationData[2]);
+            int roomType = Integer.parseInt(applicationData[2]);
+            int mealType = Integer.parseInt(applicationData[3]);
+            int dormitoryPreference = Integer.parseInt(applicationData[4]);
 
             // 학생 정보 확인
             Student student = studentRepository.findByStudentNumber(studentNumber)
@@ -73,6 +75,8 @@ public class ApplicationServiceImpl implements ApplicationService {
             Application application = Application.builder()
                     .studentId(student.getId())
                     .recruitmentId(recruitment.getId())
+                    .roomType(roomType)
+                    .mealType(mealType)
                     .status("대기")
                     .preference(dormitoryPreference)
                     .isPaid(false)

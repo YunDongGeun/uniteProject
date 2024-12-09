@@ -105,7 +105,7 @@ public class PaymentServiceImpl implements PaymentService {
     public Protocol getUnpaidList(byte[] data) {
         Protocol response = new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_SUCCESS);
         try {
-            List<Payment> unpaidList = paymentRepository.findAllByPaymentStatus("UNPAID");
+            List<Payment> unpaidList = paymentRepository.findAllByPaymentStatus("0");
             StringBuilder resultBuilder = new StringBuilder();
 
             for (Payment payment : unpaidList) {

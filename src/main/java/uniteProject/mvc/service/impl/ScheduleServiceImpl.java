@@ -26,11 +26,10 @@ public class ScheduleServiceImpl implements ScheduleService {
             StringBuilder resultBuilder = new StringBuilder();
 
             for (Schedule schedule : schedules) {
-                resultBuilder.append(String.format("%s,%s,%s,%s\n",
+                resultBuilder.append(String.format("%s,%s,%s\n",
                         schedule.getEventName(),
                         schedule.getStartTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
-                        schedule.getEndTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")),
-                        schedule.getId()
+                        schedule.getEndTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
                 ));
             }
 
