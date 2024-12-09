@@ -113,8 +113,8 @@ public class AuthServiceImpl implements AuthService {
                 return response;
             }
 
-            // data format: "username password role name studentNumber major"
-            String[] registerData = new String(data, StandardCharsets.UTF_8).split(" ");
+            // data format: "username,password,role,name,studentNumber,major,gpa,distance"
+            String[] registerData = new String(data, StandardCharsets.UTF_8).split(",");
             if (registerData.length < 6) {
                 response.setCode(Protocol.CODE_INVALID_REQ);
                 response.setData("필수 회원가입 정보가 부족합니다.");
@@ -127,6 +127,15 @@ public class AuthServiceImpl implements AuthService {
             String name = registerData[3];
             String studentNumber = registerData[4];
             String major = registerData[5];
+            Double gpa = Double.valueOf(registerData[6]);
+            Double distance = Double.valueOf(registerData[7]);
+            String studentType = "";
+
+            if (Integer.parseInt(studentNumber) % 10000 >= 5000) {
+                studentType = "대학원생";
+            } else {
+                studentType = "대학생";
+            }
 
             // 중복 ID 검사
             if (memberRepository.existsByUsername(username)) {
@@ -153,6 +162,9 @@ public class AuthServiceImpl implements AuthService {
                         .studentNumber(studentNumber)
                         .major(major)
                         .submitDocument(false)
+                        .gpa(gpa)
+                        .distanceFromSchool(distance)
+                        .studentType(studentType)
                         .build();
 
                 studentRepository.save(student);

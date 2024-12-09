@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 public class Withdrawal {
     private Long id;
-    private Long studentId;
+    private String studentId;
     private LocalDateTime leaveDate;
     private String status;
     private Integer refundAmount;

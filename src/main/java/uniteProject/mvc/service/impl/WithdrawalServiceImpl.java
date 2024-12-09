@@ -37,7 +37,7 @@ public class WithdrawalServiceImpl implements WithdrawalService {
                     .orElseThrow(() -> new RuntimeException("학생 정보를 찾을 수 없습니다."));
 
             Withdrawal withdrawal = Withdrawal.builder()
-                    .studentId(student.getId())
+                    .studentId(student.getStudentNumber())
                     .leaveDate(leaveDate)
                     .status("PENDING")
                     .refundAmount(calculateRefundAmount(student.getId(), leaveDate))
@@ -87,7 +87,7 @@ public class WithdrawalServiceImpl implements WithdrawalService {
             StringBuilder resultBuilder = new StringBuilder();
 
             for (Withdrawal withdrawal : withdrawals) {
-                Student student = studentRepository.findById(withdrawal.getStudentId())
+                Student student = studentRepository.findByStudentNumber(withdrawal.getStudentId())
                         .orElseThrow(() -> new RuntimeException("학생 정보를 찾을 수 없습니다."));
 
                 resultBuilder.append(String.format("%s,%s,%s,%d,%s\n",
