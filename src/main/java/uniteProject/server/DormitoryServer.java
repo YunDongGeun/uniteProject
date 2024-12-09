@@ -10,10 +10,12 @@ import uniteProject.persistence.PooledDataSource;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DormitoryServer {
     private static final int PORT = 8888;
     private final RequestHandler requestHandler;
+    private static final AtomicInteger clientCounter = new AtomicInteger(0);
 
     public DormitoryServer() {
         // 각 Repository 초기화
@@ -28,10 +30,11 @@ public class DormitoryServer {
         WithdrawalRepository withdrawalRepository = new WithdrawalRepository(PooledDataSource.getDataSource());
         FeeManagementRepository feeManagementRepository = new FeeManagementRepository(PooledDataSource.getDataSource());
         ScheduleRepository scheduleRepository = new ScheduleRepository(PooledDataSource.getDataSource());
+        RecruitmentRepository recruitmentRepository = new RecruitmentRepository(PooledDataSource.getDataSource());
 
         // 각 Service 초기화
         AuthService authService = new AuthServiceImpl(memberRepository, studentRepository);
-        ApplicationService applicationService = new ApplicationServiceImpl(applicationRepository, studentRepository);
+        ApplicationService applicationService = new ApplicationServiceImpl(applicationRepository, studentRepository, recruitmentRepository);
         ScheduleService scheduleService = new ScheduleServiceImpl(scheduleRepository, feeManagementRepository);
         RoomAssignmentService roomAssignmentService = new RoomAssignmentServiceImpl(
                 roomStatusRepository, applicationRepository, studentRepository, roomRepository, dormitoryRepository
@@ -52,7 +55,9 @@ public class DormitoryServer {
 
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                new Thread(new ClientHandler(clientSocket, requestHandler)).start();
+                int clientId = clientCounter.incrementAndGet();
+                new Thread(new ClientHandler(clientSocket, requestHandler, clientId))
+                        .start();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -62,14 +67,24 @@ public class DormitoryServer {
     private static class ClientHandler implements Runnable {
         private final Socket clientSocket;
         private final RequestHandler requestHandler;
+        private final int clientId;
+        private final String threadInfo;
 
-        public ClientHandler(Socket socket, RequestHandler handler) {
+        public ClientHandler(Socket socket, RequestHandler handler, int clientId) {
             this.clientSocket = socket;
             this.requestHandler = handler;
+            this.clientId = clientId;
+            this.threadInfo = Thread.currentThread().getName();
         }
 
         @Override
         public void run() {
+            String clientAddress = clientSocket.getInetAddress().getHostAddress();
+            int clientPort = clientSocket.getPort();
+
+            System.out.printf("[Client %d] Connected - Address: %s:%d, Thread: %s%n",
+                    clientId, clientAddress, clientPort, threadInfo);
+
             try (
                     BufferedInputStream bis = new BufferedInputStream(clientSocket.getInputStream());
                     BufferedOutputStream bos = new BufferedOutputStream(clientSocket.getOutputStream());
@@ -81,6 +96,9 @@ public class DormitoryServer {
                     byte type = in.readByte();
                     byte code = in.readByte();
                     short length = in.readShort();
+
+                    System.out.printf("[Client %d] Received request - Type: %d, Code: %d, Length: %d%n",
+                            clientId, type, code, length);
 
                     // 데이터 읽기
                     byte[] data = null;
@@ -106,11 +124,15 @@ public class DormitoryServer {
                         out.writeShort(0);
                     }
                     out.flush();
+
+                    System.out.printf("[Client %d] Sent response - Type: %d, Code: %d%n",
+                            clientId, response.getType(), response.getCode());
                 }
             } catch (EOFException e) {
-                // 클라이언트 연결 종료
-                System.out.println("Client disconnected");
+                System.out.printf("[Client %d] Disconnected - Address: %s:%d, Thread: %s%n",
+                        clientId, clientAddress, clientPort, threadInfo);
             } catch (IOException e) {
+                System.out.printf("[Client %d] Error occurred: %s%n", clientId, e.getMessage());
                 e.printStackTrace();
             } finally {
                 try {

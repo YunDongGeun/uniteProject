@@ -26,10 +26,12 @@ public class ApplicationServiceImpl implements ApplicationService {
     public Protocol submitApplication(byte[] data) {
         Protocol response = new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_SUCCESS);
 
+        System.out.println("start");
         try {
             if (data == null || data.length > Protocol.LEN_MAX) {
                 response.setCode(Protocol.CODE_INVALID_REQ);
                 response.setData("데이터 크기가 유효하지 않습니다.".getBytes());
+                System.out.println("error");
                 return response;
             }
 
@@ -43,7 +45,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
             String studentNumber = applicationData[0];
             String dormName = applicationData[1];
-            Integer dormitoryPreference = Integer.parseInt(applicationData[2]);
+            int dormitoryPreference = Integer.parseInt(applicationData[2]);
 
             // 학생 정보 확인
             Student student = studentRepository.findByStudentNumber(studentNumber)
@@ -61,7 +63,7 @@ public class ApplicationServiceImpl implements ApplicationService {
             }
 
             // dormitoryPreference 값 검증 (1 또는 2)
-            if (dormitoryPreference != null && (dormitoryPreference < 1 || dormitoryPreference > 2)) {
+            if (dormitoryPreference < 1 || dormitoryPreference > 2) {
                 response.setCode(Protocol.CODE_INVALID_REQ);
                 response.setData("기숙사 지망 순위는 1 또는 2만 가능합니다.".getBytes());
                 return response;
