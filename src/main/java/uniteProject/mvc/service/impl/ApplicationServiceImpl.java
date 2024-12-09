@@ -4,8 +4,10 @@ import lombok.RequiredArgsConstructor;
 import uniteProject.exception.ServerException;
 import uniteProject.global.Protocol;
 import uniteProject.mvc.model.Application;
+import uniteProject.mvc.model.Recruitment;
 import uniteProject.mvc.model.Student;
 import uniteProject.mvc.repository.ApplicationRepository;
+import uniteProject.mvc.repository.RecruitmentRepository;
 import uniteProject.mvc.repository.StudentRepository;
 import uniteProject.mvc.service.interfaces.ApplicationService;
 
@@ -18,6 +20,7 @@ import java.util.Optional;
 public class ApplicationServiceImpl implements ApplicationService {
     private final ApplicationRepository applicationRepository;
     private final StudentRepository studentRepository;
+    private final RecruitmentRepository recruitmentRepository;
 
     @Override
     public Protocol submitApplication(byte[] data) {
@@ -30,20 +33,25 @@ public class ApplicationServiceImpl implements ApplicationService {
                 return response;
             }
 
-            // data format: "studentNumber dormitoryPreference additionalNote"
-            String[] applicationData = new String(data, StandardCharsets.UTF_8).split(" ");
-            if (applicationData.length < 2) {
+            // data format: "studentNumber,dormName,dormitoryPreference"
+            String[] applicationData = new String(data, StandardCharsets.UTF_8).split(",");
+            if (applicationData.length < 3) {
                 response.setCode(Protocol.CODE_INVALID_REQ);
                 response.setData("필수 신청 정보가 부족합니다.".getBytes());
                 return response;
             }
 
             String studentNumber = applicationData[0];
-            String dormitoryPreference = applicationData[1];
+            String dormName = applicationData[1];
+            Integer dormitoryPreference = Integer.parseInt(applicationData[2]);
 
             // 학생 정보 확인
             Student student = studentRepository.findByStudentNumber(studentNumber)
                     .orElseThrow(() -> new RuntimeException("학생 정보를 찾을 수 없습니다."));
+
+            // 생활관 모집공고 확인
+            Recruitment recruitment = recruitmentRepository.findByDormName(dormName)
+                    .orElseThrow(() -> new RuntimeException("해당 생활관의 모집공고를 찾을 수 없습니다."));
 
             // 기존 신청 내역 확인
             if (applicationRepository.existsByStudentId(student.getId())) {
@@ -52,20 +60,31 @@ public class ApplicationServiceImpl implements ApplicationService {
                 return response;
             }
 
+            // dormitoryPreference 값 검증 (1 또는 2)
+            if (dormitoryPreference != null && (dormitoryPreference < 1 || dormitoryPreference > 2)) {
+                response.setCode(Protocol.CODE_INVALID_REQ);
+                response.setData("기숙사 지망 순위는 1 또는 2만 가능합니다.".getBytes());
+                return response;
+            }
+
             // 신청서 생성
             Application application = Application.builder()
                     .studentId(student.getId())
-                    .status("PENDING")
+                    .recruitmentId(recruitment.getId())
+                    .status("대기")
                     .preference(dormitoryPreference)
                     .isPaid(false)
                     .priorityScore(calculatePriorityScore(student))
                     .createdAt(LocalDateTime.now())
-                    .updatedAt(LocalDateTime.now())
+                    .updateAt(LocalDateTime.now())
                     .build();
 
             applicationRepository.save(application);
             response.setData("입사 신청이 완료되었습니다.".getBytes());
 
+        } catch (NumberFormatException e) {
+            response.setCode(Protocol.CODE_INVALID_REQ);
+            response.setData("잘못된 형식의 데이터입니다.".getBytes());
         } catch (Exception e) {
             response.setCode(Protocol.CODE_FAIL);
             response.setData(("신청 처리 중 오류가 발생했습니다: " + e.getMessage()).getBytes());
@@ -121,18 +140,19 @@ public class ApplicationServiceImpl implements ApplicationService {
             // 응답 데이터 생성
             StringBuilder resultBuilder = new StringBuilder();
             for (Application app : applications) {
-                Student student = studentRepository.findById(app.getStudentId())
-                        .orElse(null);
 
-                if (student != null) {
-                    resultBuilder.append(String.format("%s,%s,%s,%s,%s\n",
-                            student.getStudentNumber(),
-                            student.getName(),
-                            app.getStatus(),
-                            app.getIsPaid() ? "납부완료" : "미납",
-                            app.getCreatedAt()
-                    ));
-                }
+                String dormName = recruitmentRepository.findById(app.getRecruitmentId()).get().getDormName();
+
+                studentRepository.findById(app.getStudentId()).ifPresent(
+                        student -> resultBuilder.append(String.format("%s,%s,%s,%s,%s,%s\n",
+                        student.getStudentNumber(),
+                        student.getName(),
+                        app.getStatus(),
+                        dormName,
+                        app.getIsPaid() ? "납부완료" : "미납",
+                        app.getCreatedAt()
+                )));
+
             }
 
             response.setData(resultBuilder.toString().getBytes(StandardCharsets.UTF_8));
@@ -153,7 +173,7 @@ public class ApplicationServiceImpl implements ApplicationService {
             score += 1000;
         }
 
-        // GPA 점수 (최대 50점)
+        // GPA 점수 (최대 45점)
         if (student.getGpa() != null) {
             score += (int) (student.getGpa() * 10); // 4.5 만점 기준 최대 45점
         }

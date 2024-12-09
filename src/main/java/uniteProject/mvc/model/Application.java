@@ -12,10 +12,11 @@ import java.time.LocalDateTime;
 public class Application {
     private Long id;
     private Long studentId;
+    private Long recruitmentId;
     private String status;
     private Boolean isPaid;
-    private String preference;
+    private Integer preference;
     private Integer priorityScore;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private LocalDateTime updateAt;
 }

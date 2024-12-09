@@ -62,18 +62,23 @@ public class ApplicationRepository {
     }
 
     public List<Application> findAllBySearchCriteria(String status, String preference) {
-        StringBuilder sql = new StringBuilder("SELECT * FROM application WHERE 1=1");
+        StringBuilder sql = new StringBuilder(
+                "SELECT a.id, a.student_id, a.recruitment_id, a.status, a.is_paid, " +
+                        "a.preference, a.priority_score, a.created_at, a.update_at " +
+                        "FROM application a WHERE 1=1");
         List<Object> params = new ArrayList<>();
 
         if (status != null && !status.trim().isEmpty()) {
-            sql.append(" AND status = ?");
+            sql.append(" AND a.status = ?");
             params.add(status);
         }
 
         if (preference != null && !preference.trim().isEmpty()) {
-            sql.append(" AND preference = ?");
+            sql.append(" AND a.preference = ?");
             params.add(preference);
         }
+
+        sql.append(" ORDER BY a.created_at DESC");
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql.toString())) {
@@ -86,7 +91,11 @@ public class ApplicationRepository {
             List<Application> applications = new ArrayList<>();
 
             while (rs.next()) {
-                applications.add(mapResultSetToApplication(rs));
+                Application app = mapResultSetToApplication(rs);
+                if (app.getCreatedAt() == null) {
+                    throw new SQLException("Created date cannot be null for application ID: " + app.getId());
+                }
+                applications.add(app);
             }
 
             return applications;
@@ -135,7 +144,9 @@ public class ApplicationRepository {
 
     private Application insert(Application application) {
         String sql = """
-            INSERT INTO application (student_id, status, is_paid, preference, priority_score, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO application (student_id, recruitment_id, status, is_paid, preference, 
+                                   priority_score, created_at, update_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
         try (Connection connection = dataSource.getConnection();
@@ -156,14 +167,17 @@ public class ApplicationRepository {
 
     private Application update(Application application) {
         String sql = """
-            UPDATE application SET student_id = ?, status = ?, is_paid = ?, preference = ?, priority_score = ?, updated_at = ? WHERE id = ?
+            UPDATE application 
+            SET student_id = ?, recruitment_id = ?, status = ?, is_paid = ?, 
+                preference = ?, priority_score = ?, update_at = ? 
+            WHERE id = ?
             """;
 
         try (Connection connection = dataSource.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
 
             setApplicationParameters(stmt, application);
-            stmt.setLong(7, application.getId());
+            stmt.setLong(8, application.getId());
             stmt.executeUpdate();
             return application;
         } catch (SQLException e) {
@@ -173,24 +187,33 @@ public class ApplicationRepository {
 
     private void setApplicationParameters(PreparedStatement stmt, Application application) throws SQLException {
         stmt.setLong(1, application.getStudentId());
-        stmt.setString(2, application.getStatus());
-        stmt.setBoolean(3, application.getIsPaid());
-        stmt.setString(4, application.getPreference());
-        stmt.setInt(5, application.getPriorityScore());
-        stmt.setTimestamp(6, Timestamp.valueOf(LocalDateTime.now()));
+        stmt.setLong(2, application.getRecruitmentId());
+        stmt.setString(3, application.getStatus());
+        stmt.setBoolean(4, application.getIsPaid());
+        stmt.setInt(5, application.getPreference());
+        stmt.setInt(6, application.getPriorityScore());
         stmt.setTimestamp(7, Timestamp.valueOf(LocalDateTime.now()));
+        stmt.setTimestamp(8, Timestamp.valueOf(LocalDateTime.now()));
     }
 
     private Application mapResultSetToApplication(ResultSet rs) throws SQLException {
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt == null) {
+            throw new SQLException("Created date is required but was null");
+        }
+
+        Timestamp updateAt = rs.getTimestamp("update_at");
+
         return Application.builder()
                 .id(rs.getLong("id"))
                 .studentId(rs.getLong("student_id"))
+                .recruitmentId(rs.getLong("recruitment_id"))
                 .status(rs.getString("status"))
                 .isPaid(rs.getBoolean("is_paid"))
-                .preference(rs.getString("preference"))
+                .preference(rs.getInt("preference"))
                 .priorityScore(rs.getInt("priority_score"))
-                .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
-                .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
+                .createdAt(createdAt.toLocalDateTime())
+                .updateAt(updateAt != null ? updateAt.toLocalDateTime() : null)
                 .build();
     }
 
