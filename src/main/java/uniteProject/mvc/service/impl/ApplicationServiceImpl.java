@@ -26,18 +26,15 @@ public class ApplicationServiceImpl implements ApplicationService {
     public Protocol submitApplication(byte[] data) {
         Protocol response = new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_SUCCESS);
 
-        System.out.println("start");
         try {
             if (data == null || data.length > Protocol.LEN_MAX) {
                 response.setCode(Protocol.CODE_INVALID_REQ);
                 response.setData("데이터 크기가 유효하지 않습니다.".getBytes());
-                System.out.println("error");
                 return response;
             }
 
-            // data format: "studentNumber,dormName,roomType,mealType,dormitoryPreference"
             String[] applicationData = new String(data, StandardCharsets.UTF_8).split(",");
-            if (applicationData.length < 3) {
+            if (applicationData.length < 5) {
                 response.setCode(Protocol.CODE_INVALID_REQ);
                 response.setData("필수 신청 정보가 부족합니다.".getBytes());
                 return response;
@@ -57,17 +54,20 @@ public class ApplicationServiceImpl implements ApplicationService {
             Recruitment recruitment = recruitmentRepository.findByDormName(dormName)
                     .orElseThrow(() -> new RuntimeException("해당 생활관의 모집공고를 찾을 수 없습니다."));
 
-            // 기존 신청 내역 확인
-            if (applicationRepository.existsByStudentId(student.getId())) {
-                response.setCode(Protocol.CODE_FAIL);
-                response.setData("이미 신청 내역이 존재합니다.".getBytes());
-                return response;
-            }
-
             // dormitoryPreference 값 검증 (1 또는 2)
             if (dormitoryPreference < 1 || dormitoryPreference > 2) {
                 response.setCode(Protocol.CODE_INVALID_REQ);
                 response.setData("기숙사 지망 순위는 1 또는 2만 가능합니다.".getBytes());
+                return response;
+            }
+
+            // 중복 신청 검증
+            if (!applicationRepository.isValidApplication(student.getId(), recruitment.getId(), dormitoryPreference)) {
+                response.setCode(Protocol.CODE_FAIL);
+                String errorMsg = dormitoryPreference == 1 ?
+                        "이미 1지망 신청이 존재하거나 같은 생활관에 신청 내역이 있습니다." :
+                        "이미 2지망 신청이 존재하거나 같은 생활관에 신청 내역이 있습니다.";
+                response.setData(errorMsg.getBytes());
                 return response;
             }
 

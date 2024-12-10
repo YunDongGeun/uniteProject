@@ -31,6 +31,7 @@ public class DormitoryServer {
         FeeManagementRepository feeManagementRepository = new FeeManagementRepository(PooledDataSource.getDataSource());
         ScheduleRepository scheduleRepository = new ScheduleRepository(PooledDataSource.getDataSource());
         RecruitmentRepository recruitmentRepository = new RecruitmentRepository(PooledDataSource.getDataSource());
+        AccountRepository accountRepository = new AccountRepository(PooledDataSource.getDataSource());
 
         // 각 Service 초기화
         AuthService authService = new AuthServiceImpl(memberRepository, studentRepository);
@@ -41,9 +42,9 @@ public class DormitoryServer {
                 roomStatusRepository, applicationRepository, studentRepository, roomRepository, paymentRepository,
                 documentRepository, recruitmentRepository, feeManagementRepository, dormitoryRepository);
 
-        PaymentService paymentService = new PaymentServiceImpl(paymentRepository, applicationRepository, studentRepository);
+        PaymentService paymentService = new PaymentServiceImpl(paymentRepository, applicationRepository, studentRepository, recruitmentRepository, feeManagementRepository);
         DocumentService documentService = new DocumentServiceImpl(documentRepository, studentRepository, applicationRepository);
-        WithdrawalService withdrawalService = new WithdrawalServiceImpl(withdrawalRepository, studentRepository);
+        WithdrawalService withdrawalService = new WithdrawalServiceImpl(withdrawalRepository, studentRepository, applicationRepository, paymentRepository, accountRepository, roomStatusRepository);
 
         // RequestHandler 초기화
         this.requestHandler = new RequestHandler(

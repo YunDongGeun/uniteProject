@@ -92,7 +92,7 @@ public class WithdrawalRepository {
     }
 
     private void setWithdrawalParameters(PreparedStatement stmt, Withdrawal withdrawal) throws SQLException {
-        stmt.setLong(1, withdrawal.getStudentId());
+        stmt.setString(1, withdrawal.getStudentId());
         stmt.setTimestamp(2, Timestamp.valueOf(withdrawal.getLeaveDate()));
         stmt.setString(3, withdrawal.getStatus());
         stmt.setInt(4, withdrawal.getRefundAmount());
@@ -101,7 +101,7 @@ public class WithdrawalRepository {
     private Withdrawal mapResultSetToWithdrawal(ResultSet rs) throws SQLException {
         return Withdrawal.builder()
                 .id(rs.getLong("id"))
-                .studentId(rs.getLong("student_id"))
+                .studentId(rs.getString("student_id"))
                 .leaveDate(rs.getTimestamp("leave_date").toLocalDateTime())
                 .status(rs.getString("status"))
                 .refundAmount(rs.getInt("refund_amount"))

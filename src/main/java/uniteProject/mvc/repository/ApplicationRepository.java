@@ -33,6 +33,51 @@ public class ApplicationRepository {
         }
     }
 
+    public boolean isApplicationAvailable(String studentId) {
+        String sql = "SELECT COUNT(*) FROM application WHERE student_id = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setString(1, studentId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                int count = rs.getInt(1);
+                return count < 2;  // 2개 미만이면 true, 2개 이상이면 false
+            }
+            return true;  // 결과가 없으면 신청 가능
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to check application count: " + e.getMessage());
+        }
+    }
+
+    public boolean isValidApplication(Long studentId, Long recruitmentId, int preference) {
+        String sql = """
+        SELECT COUNT(*) FROM application 
+        WHERE student_id = ? AND (
+            recruitment_id = ? OR  -- 같은 생활관 체크
+            preference = ?         -- 같은 지망 순위 체크
+        ) AND status != '거부'     -- 거부된 신청은 제외
+    """;
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setLong(1, studentId);
+            stmt.setLong(2, recruitmentId);
+            stmt.setInt(3, preference);
+
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) == 0; // 중복된 신청이 없으면 true
+            }
+            return false;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to validate application: " + e.getMessage());
+        }
+    }
+
     public Optional<Application> findById(Long Id) {
         String sql = "SELECT * FROM application WHERE id = ?";
 

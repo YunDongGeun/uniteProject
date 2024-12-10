@@ -17,7 +17,6 @@ public class PooledDataSource {
             Class<PooledDataSource> pooledDataSourceClass = PooledDataSource.class;
             BufferedInputStream bis = new BufferedInputStream(Objects.requireNonNull(pooledDataSourceClass.getClassLoader().getResourceAsStream("config/db.yml")));
             properties.load(bis);
-            System.out.println("abc");
             basicDS.setDriverClassName(properties.getProperty("DRIVER_CLASS")); //loads the jdbc driver
             basicDS.setUrl(properties.getProperty("DB_CONNECTION_URL"));
             basicDS.setUsername(properties.getProperty("DB_USER"));

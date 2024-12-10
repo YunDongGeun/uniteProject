@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import uniteProject.global.Protocol;
 import uniteProject.mvc.model.Application;
 import uniteProject.mvc.model.Payment;
+import uniteProject.mvc.model.Recruitment;
 import uniteProject.mvc.model.Student;
-import uniteProject.mvc.repository.ApplicationRepository;
-import uniteProject.mvc.repository.PaymentRepository;
-import uniteProject.mvc.repository.StudentRepository;
+import uniteProject.mvc.repository.*;
+import uniteProject.mvc.service.interfaces.ApplicationService;
 import uniteProject.mvc.service.interfaces.PaymentService;
 
 import java.nio.charset.StandardCharsets;
@@ -20,6 +20,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final ApplicationRepository applicationRepository;
     private final StudentRepository studentRepository;
+    private final RecruitmentRepository recruitmentRepository;
+    private final FeeManagementRepository feeManagementRepository;
 
     @Override
     public Protocol getPaymentAmount(byte[] data) {
@@ -48,24 +50,65 @@ public class PaymentServiceImpl implements PaymentService {
         Protocol response = new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_SUCCESS);
         try {
             String[] paymentInfo = new String(data, StandardCharsets.UTF_8).split(",");
-            String studentNumber = paymentInfo[0];
-            int amount = Integer.parseInt(paymentInfo[1]);
+            if (paymentInfo.length < 2) {
+                throw new IllegalArgumentException("결제 정보가 부족합니다.");
+            }
 
+            String studentNumber = paymentInfo[0];
+            int paidAmount = Integer.parseInt(paymentInfo[1]);
+
+            // 1. 학생 정보 확인
             Student student = studentRepository.findByStudentNumber(studentNumber)
                     .orElseThrow(() -> new RuntimeException("학생 정보를 찾을 수 없습니다."));
 
+            // 2. 신청 정보 확인
             Application application = applicationRepository.findByStudentId(student.getId())
                     .orElseThrow(() -> new RuntimeException("신청 정보를 찾을 수 없습니다."));
 
+            // 승인된 신청인지 확인
+            if (!"승인".equals(application.getStatus())) {
+                throw new RuntimeException("아직 승인되지 않은 신청입니다. 현재 상태: " + application.getStatus());
+            }
+
+            // 3. 기존 결제 내역 확인
+            if (paymentRepository.findByApplicationIdAndStatus(application.getId(), "PAID").isPresent()) {
+                throw new RuntimeException("이미 납부가 완료된 신청입니다.");
+            }
+
+            // 4. 생활관 정보 조회
+            Recruitment recruitment = recruitmentRepository.findById(application.getRecruitmentId())
+                    .orElseThrow(() -> new RuntimeException("모집 정보를 찾을 수 없습니다."));
+
+            // 5. 납부 금액 검증
+            int expectedAmount = feeManagementRepository.calculateTotalFee(
+                    recruitment.getDormName(),
+                    application.getRoomType(),
+                    application.getMealType()
+            );
+
+            if (paidAmount != expectedAmount) {
+                throw new RuntimeException(String.format(
+                        "납부 금액이 일치하지 않습니다. (예상 금액: %d원, 납부 금액: %d원)",
+                        expectedAmount, paidAmount));
+            }
+
+            // 6. 결제 정보 저장
             Payment payment = Payment.builder()
                     .applicationId(application.getId())
-                    .amount(amount)
+                    .amount(paidAmount)
                     .paymentStatus("PAID")
                     .paymentDate(LocalDateTime.now())
                     .build();
 
             paymentRepository.save(payment);
+
+            // 7. 신청 상태 업데이트
+            application.setIsPaid(true);
+            application.setUpdateAt(LocalDateTime.now());
+            applicationRepository.save(application);
+
             response.setData("납부가 완료되었습니다.".getBytes());
+
         } catch (Exception e) {
             response.setCode(Protocol.CODE_FAIL);
             response.setData(e.getMessage().getBytes());

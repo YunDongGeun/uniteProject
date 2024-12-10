@@ -48,6 +48,43 @@ public class PaymentRepository {
         }
     }
 
+    public boolean existsByApplicationId(Long applicationId) {
+        String sql = "SELECT COUNT(*) FROM payment WHERE application_id = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setLong(1, applicationId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+            return false;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to check payment existence: " + e.getMessage());
+        }
+    }
+
+    public Optional<Payment> findByApplicationIdAndStatus(Long applicationId, String status) {
+        String sql = "SELECT * FROM payment WHERE application_id = ? AND payment_status = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setLong(1, applicationId);
+            stmt.setString(2, status);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return Optional.of(mapResultSetToPayment(rs));
+            }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find payment: " + e.getMessage());
+        }
+    }
+
     public void save(Payment payment) {
         String sql = """
             INSERT INTO payment (application_id, amount, payment_status, payment_date) VALUES (?, ?, ?, ?)
