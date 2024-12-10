@@ -109,7 +109,7 @@ public class ApplicationRepository {
     public List<Application> findAllBySearchCriteria(String status, String preference) {
         StringBuilder sql = new StringBuilder(
                 "SELECT a.id, a.student_id, a.recruitment_id, a.status, a.is_paid, " +
-                        "a.preference, a.priority_score, a.created_at, a.update_at " +
+                        "a.preference, a.priority_score, a.created_at, a.update_at, a.room_type, a.meal_type " +
                         "FROM application a WHERE 1=1");
         List<Object> params = new ArrayList<>();
 
@@ -146,6 +146,88 @@ public class ApplicationRepository {
             return applications;
         } catch (SQLException e) {
             throw new RuntimeException("Failed to find applications: " + e.getMessage());
+        }
+    }
+
+    // 특정 생활관의 선발된 지원자 수를 조회하는 메서드
+    public int countSelectedApplicationsByRecruitmentId(Long recruitmentId) {
+        String sql = "SELECT COUNT(*) FROM application WHERE recruitment_id = ? AND status = '선발'";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setLong(1, recruitmentId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            return 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to count selected applications: " + e.getMessage());
+        }
+    }
+
+    public List<Application> findAllByStudentIdAndStatusNot(Long studentId, String status) {
+        String sql = "SELECT * FROM application WHERE student_id = ? AND status != ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setLong(1, studentId);
+            stmt.setString(2, status);
+            ResultSet rs = stmt.executeQuery();
+
+            List<Application> applications = new ArrayList<>();
+            while (rs.next()) {
+                applications.add(mapResultSetToApplication(rs));
+            }
+            return applications;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find applications by student id and not status: " + e.getMessage());
+        }
+    }
+
+    public List<Application> findAllByStatusAndPreferenceOrderByPriorityScoreDesc(String status, int preference) {
+        String sql = """
+            SELECT * FROM application 
+            WHERE status = ? AND preference = ? 
+            ORDER BY priority_score DESC
+        """;
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setString(1, status);
+            stmt.setInt(2, preference);
+            ResultSet rs = stmt.executeQuery();
+
+            List<Application> applications = new ArrayList<>();
+            while (rs.next()) {
+                applications.add(mapResultSetToApplication(rs));
+            }
+            return applications;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find applications by status and preference: " + e.getMessage());
+        }
+    }
+
+    public Optional<Application> findByStudentIdAndPreference(Long studentId, int preference) {
+        String sql = "SELECT * FROM application WHERE student_id = ? AND preference = ?";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setLong(1, studentId);
+            stmt.setInt(2, preference);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return Optional.of(mapResultSetToApplication(rs));
+            }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find application by student id and preference: " + e.getMessage());
         }
     }
 
@@ -227,6 +309,54 @@ public class ApplicationRepository {
             return application;
         } catch (SQLException e) {
             throw new RuntimeException("Failed to update application: " + e.getMessage());
+        }
+    }
+
+    public int countSelectedApplicationsByRecruitmentIdAndRoomType(Long recruitmentId, int roomType) {
+        String sql = """
+        SELECT COUNT(*) 
+        FROM application 
+        WHERE recruitment_id = ? 
+        AND room_type = ? 
+        AND status = '선발'
+    """;
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setLong(1, recruitmentId);
+            stmt.setInt(2, roomType);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+            return 0;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to count selected applications: " + e.getMessage());
+        }
+    }
+
+    public void rejectOtherApplications(Long studentId, Long selectedApplicationId) {
+        String sql = """
+    UPDATE application 
+    SET status = '거부', update_at = ? 
+    WHERE student_id = ? 
+    AND id != ? 
+    AND preference > 1
+    AND status = '대기'
+""";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement stmt = connection.prepareStatement(sql)) {
+
+            stmt.setTimestamp(1, Timestamp.valueOf(LocalDateTime.now()));
+            stmt.setLong(2, studentId);
+            stmt.setLong(3, selectedApplicationId);
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to reject other applications: " + e.getMessage());
         }
     }
 

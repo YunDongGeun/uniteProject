@@ -138,7 +138,7 @@ public class ApplicationServiceImpl implements ApplicationService {
         try {
             // data format: "status,dormitoryPreference"
             String[] searchCriteria = new String(data, StandardCharsets.UTF_8).split(",");
-            String status = searchCriteria.length > 0 ? searchCriteria[0] : null;
+            String status = searchCriteria[0];
             String preference = searchCriteria.length > 1 ? searchCriteria[1] : null;
 
             List<Application> applications = applicationRepository.findAllBySearchCriteria(status, preference);

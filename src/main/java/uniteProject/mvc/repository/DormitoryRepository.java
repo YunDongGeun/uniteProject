@@ -14,11 +14,13 @@ import java.util.Optional;
 public class DormitoryRepository {
     private final DataSource dataSource;
 
-    public Optional<Dormitory> findById(Long id) {
-        String sql = "SELECT * FROM dormitory WHERE id = ?";
+    public Optional<Dormitory> findByDormName(String dormName) {
+        String sql = "SELECT * FROM dormitory WHERE dorm_name = ?";
+
         try (Connection connection = dataSource.getConnection();
              PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setLong(1, id);
+
+            stmt.setString(1, dormName);
             ResultSet rs = stmt.executeQuery();
 
             if (rs.next()) {

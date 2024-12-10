@@ -8,9 +8,7 @@ import uniteProject.mvc.service.interfaces.RoomAssignmentService;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 
 @RequiredArgsConstructor
 public class RoomAssignmentServiceImpl implements RoomAssignmentService {
@@ -71,74 +69,257 @@ public class RoomAssignmentServiceImpl implements RoomAssignmentService {
     public Protocol selectPassedStudents(byte[] data) {
         Protocol response = new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_SUCCESS);
         try {
-            List<Application> applications = applicationRepository.findAllByOrderByPriorityScoreDesc();
-            int passedCount = 0;
+            String preferenceStr = new String(data, StandardCharsets.UTF_8);
+            int preference = Integer.parseInt(preferenceStr);
 
-            for (Application app : applications) {
-                if (Objects.equals(app.getStatus(), "대기")) {
-                    app.setStatus("선발");
-                    app.setUpdateAt(LocalDateTime.now());
-                    applicationRepository.save(app);
-
-                    String dormName = recruitmentRepository.findById(app.getRecruitmentId()).get().getDormName();
-
-                    int amount = 0;
-                    amount += feeManagementRepository.findByDormNameAndFeeType(dormName, "ROOM_"+app.getRoomType()).get().getAmount();
-                    amount += feeManagementRepository.findByDormNameAndFeeType(dormName, "MEAL_"+app.getMealType()).get().getAmount();
-
-                    // 1. 결제 정보 생성
-                    Payment payment = Payment.builder()
-                            .applicationId(app.getId())
-                            .amount(amount)  // 기숙사비 금액
-                            .paymentStatus("미납")  // 미납 상태
-                            .paymentDate(null)   // 납부 전이므로 날짜는 null
-                            .build();
-                    paymentRepository.save(payment);
-
-                    // 2. 결핵진단서 기본 엔트리 생성 (빈 데이터로)
-                    TBCertificate certificate = TBCertificate.builder()
-                            .applicationId(app.getId())
-                            .image(null)
-                            .uploadedAt(null)
-                            .build();
-                    documentRepository.save(certificate);
-
-                    passedCount++;
-                }
+            if (preference != 1 && preference != 2) {
+                throw new IllegalArgumentException("선발 지망 순위는 1 또는 2만 가능합니다.");
             }
 
-            String result = String.format("총 %d명의 합격자가 선발되었습니다. 결제 정보와 결핵진단서 제출 정보가 생성되었습니다.", passedCount);
+            int passedCount = (preference == 1) ?
+                    processFirstPreference() :
+                    processSecondPreference();
+
+            String result = String.format(
+                    "총 %d명의 %d지망 합격자가 선발되었습니다. 결제 정보와 결핵진단서 제출 정보가 생성되었습니다.",
+                    passedCount,
+                    preference
+            );
             response.setData(result.getBytes());
         } catch (Exception e) {
             response.setCode(Protocol.CODE_FAIL);
             response.setData(e.getMessage().getBytes());
         }
         return response;
+    }
+
+    private int processFirstPreference() {
+        List<Application> firstPreferenceApplications = applicationRepository
+                .findAllByStatusAndPreferenceOrderByPriorityScoreDesc("대기", 1);
+
+        int passedCount = 0;
+        Set<Long> selectedStudentIds = new HashSet<>();
+        Map<Long, Integer> recruitmentSelectionCount = new HashMap<>();  // 생활관별 선발 인원 카운트
+
+        // 생활관별 수용 가능 인원수 확인
+        Map<Long, Integer> recruitmentCapacities = getRecruitmentCapacities();
+
+        // 1지망자 처리
+        for (Application app : firstPreferenceApplications) {
+            if (selectedStudentIds.contains(app.getStudentId())) {
+                continue;
+            }
+
+            // 해당 생활관의 현재까지 선발된 인원 확인
+            int currentCount = recruitmentSelectionCount
+                    .getOrDefault(app.getRecruitmentId(), 0);
+
+            // 수용 가능 인원 확인
+            int maxCapacity = recruitmentCapacities
+                    .getOrDefault(app.getRecruitmentId(), 0);
+
+            // 수용 가능 인원 초과 체크
+            if (currentCount >= maxCapacity) {
+                continue;
+            }
+
+            // 룸 타입별 가능 여부 체크
+            if (!hasAvailableRoomForType(app.getRecruitmentId(), app.getRoomType())) {
+                continue;
+            }
+
+            // 선발 처리
+            app.setStatus("선발");
+            app.setUpdateAt(LocalDateTime.now());
+            applicationRepository.save(app);
+
+            // 카운트 업데이트
+            recruitmentSelectionCount.put(
+                    app.getRecruitmentId(),
+                    currentCount + 1
+            );
+
+            selectedStudentIds.add(app.getStudentId());
+
+            createPaymentInfo(app);
+            createTBCertificateInfo(app);
+
+            passedCount++;
+
+            // 해당 학생의 2지망 자동 거부 처리
+            rejectOtherApplications(app.getStudentId(), app.getId());
+        }
+
+        // 선발되지 않은 1지망 신청 거부 처리
+        for (Application app : firstPreferenceApplications) {
+            if (!selectedStudentIds.contains(app.getStudentId())) {
+                app.setStatus("거부");
+                app.setUpdateAt(LocalDateTime.now());
+                applicationRepository.save(app);
+            }
+        }
+
+        return passedCount;
+    }
+
+    private int processSecondPreference() {
+        List<Application> secondPreferenceApplications = applicationRepository
+                .findAllByStatusAndPreferenceOrderByPriorityScoreDesc("대기", 2);
+
+        Map<Long, Integer> recruitmentSelectionCount = new HashMap<>();
+        Map<Long, Integer> recruitmentCapacities = getRecruitmentCapacities();
+
+        int passedCount = 0;
+
+        for (Application app : secondPreferenceApplications) {
+            Optional<Application> firstPreference = applicationRepository
+                    .findByStudentIdAndPreference(app.getStudentId(), 1);
+
+            if (firstPreference.isEmpty() ||
+                    !"거부".equals(firstPreference.get().getStatus())) {
+                continue;
+            }
+
+            // 수용 인원 체크
+            int currentCount = recruitmentSelectionCount
+                    .getOrDefault(app.getRecruitmentId(), 0);
+            int maxCapacity = recruitmentCapacities
+                    .getOrDefault(app.getRecruitmentId(), 0);
+
+            if (currentCount >= maxCapacity) {
+                continue;
+            }
+
+            // 룸 타입별 가능 여부 체크
+            if (!hasAvailableRoomForType(app.getRecruitmentId(), app.getRoomType())) {
+                continue;
+            }
+
+            app.setStatus("선발");
+            app.setUpdateAt(LocalDateTime.now());
+            applicationRepository.save(app);
+
+            recruitmentSelectionCount.put(
+                    app.getRecruitmentId(),
+                    currentCount + 1
+            );
+
+            createPaymentInfo(app);
+            createTBCertificateInfo(app);
+
+            passedCount++;
+        }
+
+        return passedCount;
+    }
+
+    private Map<Long, Integer> getRecruitmentCapacities() {
+        List<Recruitment> recruitments = recruitmentRepository.findAll();
+        Map<Long, Integer> capacities = new HashMap<>();
+
+        for (Recruitment recruitment : recruitments) {
+            capacities.put(recruitment.getId(), recruitment.getCapacity());
+        }
+
+        return capacities;
+    }
+
+    private boolean hasAvailableRoomForType(Long recruitmentId, int roomType) {
+        Recruitment recruitment = recruitmentRepository.findById(recruitmentId)
+                .orElseThrow(() -> new RuntimeException("모집 정보를 찾을 수 없습니다."));
+
+        // 해당 생활관의 특정 룸타입의 총 수용가능 인원 계산
+        int totalCapacityForType = roomRepository
+                .countAvailableCapacityByDormitoryAndType(
+                        dormitoryRepository.findByDormName(recruitment.getDormName())
+                                .orElseThrow(() -> new RuntimeException("생활관 정보를 찾을 수 없습니다."))
+                                .getId(),
+                        roomType
+                );
+
+        // 이미 선발된 인원 확인
+        int selectedCount = applicationRepository
+                .countSelectedApplicationsByRecruitmentIdAndRoomType(
+                        recruitmentId,
+                        roomType
+                );
+
+        return selectedCount < totalCapacityForType;
+    }
+
+    private void rejectOtherApplications(Long studentId, Long selectedApplicationId) {
+        applicationRepository.rejectOtherApplications(studentId, selectedApplicationId);
+    }
+
+    private void createPaymentInfo(Application app) {
+        String dormName = recruitmentRepository.findById(app.getRecruitmentId())
+                .orElseThrow(() -> new RuntimeException("모집 정보를 찾을 수 없습니다."))
+                .getDormName();
+
+        int amount = 0;
+        amount += feeManagementRepository
+                .findByDormNameAndFeeType(dormName, "ROOM_" + app.getRoomType())
+                .orElseThrow(() -> new RuntimeException("방 타입에 대한 요금 정보를 찾을 수 없습니다."))
+                .getAmount();
+
+        if (app.getMealType() > 0) {  // 식사 선택한 경우에만
+            amount += feeManagementRepository
+                    .findByDormNameAndFeeType(dormName, "MEAL_" + app.getMealType())
+                    .orElseThrow(() -> new RuntimeException("식사 타입에 대한 요금 정보를 찾을 수 없습니다."))
+                    .getAmount();
+        }
+
+        Payment payment = Payment.builder()
+                .applicationId(app.getId())
+                .amount(amount)
+                .paymentStatus("미납")
+                .paymentDate(null)
+                .build();
+        paymentRepository.save(payment);
+    }
+
+
+    private void createTBCertificateInfo(Application app) {
+        TBCertificate certificate = TBCertificate.builder()
+                .applicationId(app.getId())
+                .image(null)
+                .uploadedAt(null)
+                .build();
+        documentRepository.save(certificate);
     }
 
     @Override
     public Protocol assignRooms(byte[] data) {
         Protocol response = new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_SUCCESS);
         try {
-            List<Application> passedStudents = applicationRepository.findAllByStatus("PASSED");
-            List<Room> availableRooms = roomRepository.findAllAvailableRooms();
+            List<Application> selectedStudents = applicationRepository.findAllByStatus("선발");
+            Map<Long, Integer> updatedCapacities = new HashMap<>(); // recruitmentId -> remaining capacity
 
-            for (Application app : passedStudents) {
-                Student student = studentRepository.findById(app.getStudentId())
-                        .orElseThrow(() -> new RuntimeException("학생 정보를 찾을 수 없습니다."));
+            // 1. 자격 검증 및 호실 배정
+            for (Application app : selectedStudents) {
+                boolean isPaymentCompleted = checkPaymentStatus(app.getId());
+                boolean isTBCertificateSubmitted = checkTBCertificateStatus(app.getId());
 
-                Room room = findSuitableRoom(availableRooms, student);
+                if (!isPaymentCompleted || !isTBCertificateSubmitted) {
+                    // 자격 미달자 처리
+                    app.setStatus("거부");
+                    app.setUpdateAt(LocalDateTime.now());
+                    applicationRepository.save(app);
+                    continue;
+                }
 
-                RoomStatus roomStatus = RoomStatus.builder()
-                        .roomId(room.getId())
-                        .studentId(student.getId())
-                        .bedNumber(findAvailableBed(room))
-                        .build();
+                // 호실 배정 진행
+                assignRoomToStudent(app);
 
-                roomStatusRepository.save(roomStatus);
+                // 남은 수용 인원 카운트 업데이트
+                Long recruitmentId = app.getRecruitmentId();
+                updatedCapacities.merge(recruitmentId, -1, Integer::sum);
             }
 
-            String result = String.format("총 %d명의 학생 호실 배정이 완료되었습니다.", passedStudents.size());
+            // 2. Recruitment 테이블 capacity 업데이트
+            updateRecruitmentCapacities(updatedCapacities);
+
+            String result = "호실 배정이 완료되었습니다.";
             response.setData(result.getBytes());
         } catch (Exception e) {
             response.setCode(Protocol.CODE_FAIL);
@@ -147,15 +328,61 @@ public class RoomAssignmentServiceImpl implements RoomAssignmentService {
         return response;
     }
 
-    private Room findSuitableRoom(List<Room> rooms, Student student) {
-        if (rooms == null || rooms.isEmpty()) {
-            throw new RuntimeException("사용 가능한 방이 없습니다.");
-        }
-        Random random = new Random();
-        return rooms.get(random.nextInt(rooms.size()));
+    private boolean checkPaymentStatus(Long applicationId) {
+        return paymentRepository.findByApplicationId(applicationId)
+                .map(payment -> "PAID".equals(payment.getPaymentStatus()))
+                .orElse(false);
     }
 
-    private String findAvailableBed(Room room) {
-        return roomRepository.findAvailableBed(room);
+    private boolean checkTBCertificateStatus(Long applicationId) {
+        return documentRepository.findByApplicationId(applicationId)
+                .map(cert -> cert.getImage() != null && cert.getUploadedAt() != null)
+                .orElse(false);
+    }
+
+    private void assignRoomToStudent(Application app) {
+        // 해당 생활관의 사용 가능한 방 조회
+        Recruitment recruitment = recruitmentRepository.findById(app.getRecruitmentId())
+                .orElseThrow(() -> new RuntimeException("모집 정보를 찾을 수 없습니다."));
+
+        Dormitory dormitory = dormitoryRepository.findByDormName(recruitment.getDormName())
+                .orElseThrow(() -> new RuntimeException("생활관 정보를 찾을 수 없습니다."));
+
+        List<Room> availableRooms = roomRepository.findAvailableRoomsByDormitoryAndType(
+                dormitory.getId(),
+                app.getRoomType()
+        );
+
+        if (availableRooms.isEmpty()) {
+            throw new RuntimeException("배정 가능한 방이 없습니다.");
+        }
+
+        // 가장 적절한 방 선택
+        Room selectedRoom = availableRooms.get(0);  // 또는 더 복잡한 방 선택 로직 구현
+
+        // 사용 가능한 침대 번호 찾기
+        String bedNumber = roomRepository.findAvailableBed(selectedRoom);
+
+        // 호실 상태 저장
+        RoomStatus roomStatus = RoomStatus.builder()
+                .roomId(selectedRoom.getId())
+                .studentId(app.getStudentId())
+                .bedNumber(bedNumber)
+                .build();
+
+        roomStatusRepository.save(roomStatus);
+    }
+
+    private void updateRecruitmentCapacities(Map<Long, Integer> updatedCapacities) {
+        for (Map.Entry<Long, Integer> entry : updatedCapacities.entrySet()) {
+            Recruitment recruitment = recruitmentRepository.findById(entry.getKey())
+                    .orElseThrow(() -> new RuntimeException("모집 정보를 찾을 수 없습니다."));
+
+            int currentCapacity = recruitment.getCapacity();
+            int newCapacity = currentCapacity + entry.getValue();  // 감소된 인원만큼 차감
+
+            recruitment.setCapacity(Math.max(0, newCapacity));
+            recruitmentRepository.save(recruitment);
+        }
     }
 }
