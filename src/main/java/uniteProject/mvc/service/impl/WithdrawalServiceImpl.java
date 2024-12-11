@@ -57,11 +57,11 @@ public class WithdrawalServiceImpl implements WithdrawalService {
             // 4. 환불 금액 계산
             int refundAmount = calculateRefundAmount(student.getId(), leaveDate);
 
-            // 5. 퇴사 신청 저장
+            // withdrawal 생성 시 student.getId()를 사용
             Withdrawal withdrawal = Withdrawal.builder()
-                    .studentId(student.getStudentNumber())
+                    .studentId(student.getId())  // 학번이 아닌 students 테이블의 id 사용
                     .leaveDate(leaveDate)
-                    .status("대기")  // 초기 상태는 '대기'
+                    .status("대기")
                     .refundAmount(refundAmount)
                     .build();
 
@@ -115,7 +115,7 @@ public class WithdrawalServiceImpl implements WithdrawalService {
             StringBuilder resultBuilder = new StringBuilder();
 
             for (Withdrawal withdrawal : withdrawals) {
-                Student student = studentRepository.findByStudentNumber(withdrawal.getStudentId())
+                Student student = studentRepository.findByStudentNumber(withdrawal.getStudentId().toString())
                         .orElseThrow(() -> new RuntimeException("학생 정보를 찾을 수 없습니다."));
 
                 Account account = accountRepository.findByStudentId(student.getId())

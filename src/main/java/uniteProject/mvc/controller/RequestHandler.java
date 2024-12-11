@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import uniteProject.global.Protocol;
 import uniteProject.mvc.service.interfaces.*;
 
+import java.nio.charset.StandardCharsets;
+
 @RequiredArgsConstructor
 public class RequestHandler {
     private final AuthService authService;

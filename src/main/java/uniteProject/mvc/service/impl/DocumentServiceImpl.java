@@ -10,11 +10,15 @@ import uniteProject.mvc.repository.DocumentRepository;
 import uniteProject.mvc.repository.StudentRepository;
 import uniteProject.mvc.service.interfaces.DocumentService;
 
-import java.nio.ByteBuffer;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @RequiredArgsConstructor
 public class DocumentServiceImpl implements DocumentService {
@@ -41,7 +45,7 @@ public class DocumentServiceImpl implements DocumentService {
             // 이미 제출된 결핵진단서가 있는지 확인
             if (documentRepository.existsByApplicationId(application.getId())) {
                 response.setCode(Protocol.CODE_FAIL);
-                response.setData("이미 제출된 결핵진단서가 있습니다.");
+                response.setData("이미 제출된 결핵진단서가 있습니다.".getBytes(StandardCharsets.UTF_8));
                 return response;
             }
 
@@ -52,11 +56,12 @@ public class DocumentServiceImpl implements DocumentService {
                     .build();
 
             documentRepository.save(certificate);
-            response.setData("결핵진단서가 성공적으로 제출되었습니다.");
+            response.setData("결핵진단서가 성공적으로 제출되었습니다.".getBytes(StandardCharsets.UTF_8));
 
         } catch (Exception e) {
             response.setCode(Protocol.CODE_FAIL);
-            response.setData("결핵진단서 제출 중 오류가 발생했습니다: " + e.getMessage());
+            response.setData(("결핵진단서 제출 중 오류가 발생했습니다: " + e.getMessage())
+                    .getBytes(StandardCharsets.UTF_8));
         }
 
         return response;
@@ -76,33 +81,21 @@ public class DocumentServiceImpl implements DocumentService {
 
             Optional<TBCertificate> certificate = documentRepository.findByApplicationId(application.getId());
 
-            if (certificate.isPresent()) {
-                // 제출 시간과 이미지 데이터를 결합
+            System.out.println(Arrays.toString(certificate.get().getImage()));
+
+            if (certificate.isPresent() && certificate.get().getImage() != null) {
+                // 1. 시간 문자열 생성
                 LocalDateTime uploadTime = certificate.get().getUploadedAt();
                 String timeString = uploadTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                byte[] timeBytes = timeString.getBytes(StandardCharsets.UTF_8);
-                byte[] imageBytes = certificate.get().getImage();
 
-                // 결과 형식: [상태코드(1byte)],[시간문자열길이(4bytes)],[시간문자열],[이미지데이터]
-                byte[] resultData = new byte[1 + 4 + timeBytes.length + imageBytes.length];
+                // 2. 이미지 데이터를 Base64로 인코딩
+                String base64Image = Base64.getEncoder().encodeToString(certificate.get().getImage());
 
-                // 상태코드 1: 제출완료
-                resultData[0] = 1;
-
-                // 시간문자열 길이 (4bytes)
-                byte[] lengthBytes = ByteBuffer.allocate(4).putInt(timeBytes.length).array();
-                System.arraycopy(lengthBytes, 0, resultData, 1, 4);
-
-                // 시간문자열 복사
-                System.arraycopy(timeBytes, 0, resultData, 5, timeBytes.length);
-
-                // 이미지 데이터 복사
-                System.arraycopy(imageBytes, 0, resultData, 5 + timeBytes.length, imageBytes.length);
-
-                response.setData(resultData);
+                // 3. 응답 데이터 조합 (상태,시간,이미지)
+                String responseData = String.format("제출완료,%s,%s", timeString, base64Image);
+                response.setData(responseData.getBytes(StandardCharsets.UTF_8));
             } else {
-                // 미제출인 경우 상태코드만 전송 (0: 미제출)
-                response.setData(new byte[]{0});
+                response.setData("미제출".getBytes(StandardCharsets.UTF_8));
             }
 
         } catch (Exception e) {
