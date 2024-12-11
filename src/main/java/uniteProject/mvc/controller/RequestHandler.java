@@ -89,7 +89,8 @@ public class RequestHandler {
 
     private Protocol handleDocument(Protocol protocol) {
         return switch (protocol.getCode()) {
-            case Protocol.CODE_DOCUMENT_SUBMIT -> documentService.submitTBCertificate(protocol.getData());
+            case Protocol.CODE_DOCUMENT_SUBMIT -> documentService.submitTBCertificateBeforeId(protocol.getData());
+            case Protocol.CODE_DOCUMENT_FILE -> documentService.submitTBCertificate(protocol.getData());
             case Protocol.CODE_DOCUMENT_STATUS -> documentService.checkSubmissionStatus(protocol.getData());
             default -> new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_INVALID_REQ);
         };

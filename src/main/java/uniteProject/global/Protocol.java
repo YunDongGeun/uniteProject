@@ -52,6 +52,7 @@ public class Protocol {
     // Document Codes (0x06)
     public static final byte CODE_DOCUMENT_SUBMIT = 0x01;   // 결핵진단서 제출
     public static final byte CODE_DOCUMENT_STATUS = 0x02;   // 제출현황 조회
+    public static final byte CODE_DOCUMENT_FILE = 0x03; // 결핵진단서 이미지파일
 
     // Withdrawal Codes (0x07)
     public static final byte CODE_WITHDRAWAL_REQ = 0x01;    // 퇴사 신청

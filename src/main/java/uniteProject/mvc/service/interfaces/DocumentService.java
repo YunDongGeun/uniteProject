@@ -17,4 +17,5 @@ public interface DocumentService {
      */
     Protocol checkSubmissionStatus(byte[] data);
 
+    Protocol submitTBCertificateBeforeId(byte[] data);
 }

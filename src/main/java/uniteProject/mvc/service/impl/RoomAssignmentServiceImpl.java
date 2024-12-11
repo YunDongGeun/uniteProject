@@ -300,7 +300,7 @@ public class RoomAssignmentServiceImpl implements RoomAssignmentService {
                 boolean isPaymentCompleted = checkPaymentStatus(app.getId());
                 boolean isTBCertificateSubmitted = checkTBCertificateStatus(app.getId());
 
-                if (!isPaymentCompleted || !isTBCertificateSubmitted) {
+                if (!isPaymentCompleted /*|| !isTBCertificateSubmitted*/) {
                     // 자격 미달자 처리
                     app.setStatus("거부");
                     app.setUpdateAt(LocalDateTime.now());
@@ -330,7 +330,7 @@ public class RoomAssignmentServiceImpl implements RoomAssignmentService {
 
     private boolean checkPaymentStatus(Long applicationId) {
         return paymentRepository.findByApplicationId(applicationId)
-                .map(payment -> "PAID".equals(payment.getPaymentStatus()))
+                .map(payment -> "납부".equals(payment.getPaymentStatus()))
                 .orElse(false);
     }
 
