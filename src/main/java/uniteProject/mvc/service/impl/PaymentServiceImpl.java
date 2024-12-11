@@ -55,7 +55,7 @@ public class PaymentServiceImpl implements PaymentService {
             }
 
             String studentNumber = paymentInfo[0];
-            int paidAmount = Integer.parseInt(paymentInfo[1]);
+            String paid = paymentInfo[1];
 
             // 1. 학생 정보 확인
             Student student = studentRepository.findByStudentNumber(studentNumber)
@@ -66,7 +66,7 @@ public class PaymentServiceImpl implements PaymentService {
                     .orElseThrow(() -> new RuntimeException("신청 정보를 찾을 수 없습니다."));
 
             // 승인된 신청인지 확인
-            if (!"승인".equals(application.getStatus())) {
+            if (!"선발".equals(application.getStatus())) {
                 throw new RuntimeException("아직 승인되지 않은 신청입니다. 현재 상태: " + application.getStatus());
             }
 
@@ -75,39 +75,27 @@ public class PaymentServiceImpl implements PaymentService {
                 throw new RuntimeException("이미 납부가 완료된 신청입니다.");
             }
 
-            // 4. 생활관 정보 조회
-            Recruitment recruitment = recruitmentRepository.findById(application.getRecruitmentId())
-                    .orElseThrow(() -> new RuntimeException("모집 정보를 찾을 수 없습니다."));
+            Payment pay = paymentRepository.findByApplicationId(application.getId())
+                    .orElseThrow(() -> new RuntimeException("납부 정보를 찾을 수 없습니다."));
 
-            // 5. 납부 금액 검증
-            int expectedAmount = feeManagementRepository.calculateTotalFee(
-                    recruitment.getDormName(),
-                    application.getRoomType(),
-                    application.getMealType()
-            );
+            if (paid.equals("납부")) {
+                // 6. 결제 정보 저장
+                Payment payment = Payment.builder()
+                        .applicationId(application.getId())
+                        .amount(pay.getAmount())
+                        .paymentStatus(paid)
+                        .paymentDate(LocalDateTime.now())
+                        .build();
 
-            if (paidAmount != expectedAmount) {
-                throw new RuntimeException(String.format(
-                        "납부 금액이 일치하지 않습니다. (예상 금액: %d원, 납부 금액: %d원)",
-                        expectedAmount, paidAmount));
-            }
+                paymentRepository.save(payment);
 
-            // 6. 결제 정보 저장
-            Payment payment = Payment.builder()
-                    .applicationId(application.getId())
-                    .amount(paidAmount)
-                    .paymentStatus("PAID")
-                    .paymentDate(LocalDateTime.now())
-                    .build();
+                // 7. 신청 상태 업데이트
+                application.setIsPaid(true);
+                application.setUpdateAt(LocalDateTime.now());
+                applicationRepository.save(application);
 
-            paymentRepository.save(payment);
-
-            // 7. 신청 상태 업데이트
-            application.setIsPaid(true);
-            application.setUpdateAt(LocalDateTime.now());
-            applicationRepository.save(application);
-
-            response.setData("납부가 완료되었습니다.".getBytes());
+                response.setData("납부가 완료되었습니다.".getBytes());
+            } else response.setData("납부 실패.".getBytes());
 
         } catch (Exception e) {
             response.setCode(Protocol.CODE_FAIL);

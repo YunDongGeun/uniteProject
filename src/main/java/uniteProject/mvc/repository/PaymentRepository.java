@@ -113,12 +113,14 @@ public class PaymentRepository {
     }
 
     private Payment mapResultSetToPayment(ResultSet rs) throws SQLException {
+        Timestamp paymentDate = rs.getTimestamp("payment_date");
+
         return Payment.builder()
                 .id(rs.getLong("id"))
                 .applicationId(rs.getLong("application_id"))
                 .amount(rs.getInt("amount"))
                 .paymentStatus(rs.getString("payment_status"))
-                .paymentDate(rs.getTimestamp("payment_date").toLocalDateTime())
+                .paymentDate(paymentDate != null ? paymentDate.toLocalDateTime() : null)
                 .build();
     }
 }
