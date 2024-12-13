@@ -108,7 +108,7 @@ public class PaymentServiceImpl implements PaymentService {
     public Protocol getPaidList(byte[] data) {
         Protocol response = new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_SUCCESS);
         try {
-            List<Payment> paidList = paymentRepository.findAllByPaymentStatus("PAID");
+            List<Payment> paidList = paymentRepository.findAllByPaymentStatus("납부");
             StringBuilder resultBuilder = new StringBuilder();
 
             for (Payment payment : paidList) {
@@ -136,7 +136,7 @@ public class PaymentServiceImpl implements PaymentService {
     public Protocol getUnpaidList(byte[] data) {
         Protocol response = new Protocol(Protocol.TYPE_RESPONSE, Protocol.CODE_SUCCESS);
         try {
-            List<Payment> unpaidList = paymentRepository.findAllByPaymentStatus("0");
+            List<Payment> unpaidList = paymentRepository.findAllByPaymentStatus("미납");
             StringBuilder resultBuilder = new StringBuilder();
 
             for (Payment payment : unpaidList) {
